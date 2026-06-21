@@ -15,6 +15,16 @@ vi.mock("@/features/catalog/queries", async (importOriginal) => {
   };
 });
 
+vi.mock("@/lib/auth/session", () => ({
+  getActiveCustomer: vi.fn(async () => null),
+  getCurrentUser: vi.fn(async () => null),
+  isActiveMember: vi.fn(async () => false),
+}));
+
+vi.mock("@/features/catalog/prices", () => ({
+  getApplicablePrices: vi.fn(async () => new Map()),
+}));
+
 const parentId = "00000000-0000-4000-8000-000000000201";
 const childId = "00000000-0000-4000-8000-000000000203";
 

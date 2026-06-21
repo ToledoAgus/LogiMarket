@@ -340,3 +340,68 @@ levantar aplicación, navegador y Supabase de manera reproducible.
 **Consecuencias:** Búsqueda, filtros, detalle, metadata y ocultamiento de precios quedan
 cubiertos en 15 pruebas rápidas, pero la navegación real entre páginas conserva riesgo
 residual hasta sumar el smoke E2E. Este diferimiento no habilita mocks en runtime.
+
+### ADR-020 - Autenticación email/contraseña con alta de cliente vía RPC
+
+**Fecha:** 2026-06-20
+**Estado:** Aceptada
+**Reemplaza:** N/A
+
+**Contexto:** Sprint 3 (precios, carrito y pedidos) requiere sesión real, pero las
+pantallas de Auth quedaron diferidas en Sprint 1. Un nuevo registrante obtiene `profiles`
+por trigger, pero no puede crear su `customers` ni `organization_members` porque la RLS de
+esas tablas exige rol admin. Crear esas filas desde el cliente violaría el mínimo
+privilegio (ADR-003).
+
+**Decisión:** Implementar login, registro y logout con Supabase Auth (email + contraseña)
+mediante Server Actions. El alta comercial se realiza con la función
+`register_customer` (`security definer`, `search_path` vacío), acotada a `auth.uid()` en la
+única organización del MVP, idempotente, que crea la ficha de cliente y la membresía como
+`active`. En desarrollo local se desactiva `enable_confirmations` para validar el flujo de
+extremo a extremo; producción debe reactivar la confirmación por email.
+
+**Consecuencias:** El flujo funciona sin panel administrativo, pero todo registrante queda
+auto-activado como cliente y puede ver precios. El paso de aprobación comercial real
+(pendiente → activo) se posterga al backoffice (Sprint 5) y queda registrado como riesgo.
+
+### ADR-021 - Carrito con persistencia local y servidor como autoridad de importes
+
+**Fecha:** 2026-06-20
+**Estado:** Aceptada
+**Reemplaza:** N/A
+
+**Contexto:** El brief y el alcance de Sprint 3 piden persistencia local del carrito. El
+modelo previó tablas `carts`/`cart_items`, pero un carrito server-side agrega RLS,
+sincronización y migración antes de tener evidencia de que se necesite multidispositivo.
+
+**Decisión:** Mantener el carrito en `localStorage` mediante un contexto cliente
+(`CartProvider`), versionado por clave (`logimarket-cart-v1`) y tolerante a almacenamiento
+no disponible. Los importes guardados son solo de referencia para el subtotal estimado; el
+checkout recalcula precios y total en el servidor desde `product_prices` vigentes (ADR-005).
+No se crean tablas `carts`/`cart_items` en este sprint.
+
+**Consecuencias:** Menor superficie y cero estado compartido entre dispositivos. Si más
+adelante se requiere carrito sincronizado se incorporarán las tablas previstas sin afectar
+la frontera de precios, que ya vive en el servidor.
+
+### ADR-022 - Checkout transaccional vía `place_order` y WhatsApp post-persistencia
+
+**Fecha:** 2026-06-20
+**Estado:** Aceptada
+**Reemplaza:** N/A
+
+**Contexto:** Crear un pedido implica resolver precios, validar mínimos y stock, reservar
+inventario, generar número y escribir snapshots, todo de forma atómica y sin confiar en
+importes del cliente. WhatsApp no confirma entrega, por lo que el pedido debe existir antes
+de generar el enlace.
+
+**Decisión:** Implementar `place_order` (`security definer`, `search_path` vacío) que, para
+el cliente activo de `auth.uid()`, resuelve la lista de precios vigente, valida cantidad
+mínima y disponibilidad con bloqueo de fila (`for update`), reserva stock con movimiento de
+inventario `reservation`, inserta `orders` + `order_items` con snapshots y devuelve número y
+total. El enlace `wa.me` se construye en servidor con los importes ya persistidos y el
+número de la organización.
+
+**Consecuencias:** El total es determinista y auditable, y la sobreventa queda mitigada por
+el bloqueo. Las reservas no se liberan automáticamente al cancelar un pedido; esa máquina de
+estados y la confirmación administrativa se completarán en Sprint 4/5.

@@ -2,7 +2,9 @@ import Link from "next/link";
 import { LockKeyhole, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { AddToCart } from "@/features/cart/add-to-cart";
 
+import type { ProductPrice } from "./price-format";
 import { ProductImage } from "./product-image";
 import type { CatalogProduct } from "./types";
 
@@ -12,7 +14,13 @@ const stockLabels = {
   out_of_stock: "Sin stock",
 } as const;
 
-export function ProductDetail({ product }: { product: CatalogProduct }) {
+export function ProductDetail({
+  prices = [],
+  product,
+}: {
+  prices?: ProductPrice[];
+  product: CatalogProduct;
+}) {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -84,13 +92,30 @@ export function ProductDetail({ product }: { product: CatalogProduct }) {
             </dl>
           </section>
 
-          <div className="mt-8 rounded-xl border border-primary/20 bg-primary/5 p-5">
-            <p className="font-bold">Precio exclusivo para clientes</p>
-            <p className="mt-1 text-sm text-muted-foreground">Iniciá sesión para consultar precios y condiciones comerciales.</p>
-            <Button asChild className="mt-4 w-full sm:w-auto" size="lg">
-              <Link href="/login"><LockKeyhole aria-hidden="true" className="size-4" /> Iniciar sesión para ver precios</Link>
-            </Button>
-          </div>
+          {prices.length > 0 ? (
+            <AddToCart
+              prices={prices}
+              product={{
+                availableQuantity: product.availableQuantity,
+                brandName: product.brandName,
+                imageUrl: product.image?.url ?? null,
+                minimumQuantity: product.minimumQuantity,
+                name: product.name,
+                productId: product.id,
+                requiresMinimumPurchase: product.requiresMinimumPurchase,
+                salesUnit: product.salesUnit,
+                slug: product.slug,
+              }}
+            />
+          ) : (
+            <div className="mt-8 rounded-xl border border-primary/20 bg-primary/5 p-5">
+              <p className="font-bold">Precio exclusivo para clientes</p>
+              <p className="mt-1 text-sm text-muted-foreground">Iniciá sesión para consultar precios y condiciones comerciales.</p>
+              <Button asChild className="mt-4 w-full sm:w-auto" size="lg">
+                <Link href="/login"><LockKeyhole aria-hidden="true" className="size-4" /> Iniciar sesión para ver precios</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </article>
     </div>

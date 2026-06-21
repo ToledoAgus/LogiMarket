@@ -1,10 +1,15 @@
 import Link from "next/link";
-import { Menu, ShoppingCart } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 
 import { ThemeSelector } from "@/components/theme/theme-selector";
 import { Button } from "@/components/ui/button";
+import { logoutAction } from "@/features/auth/actions";
+import { CartButton } from "@/features/cart/cart-button";
+import { getCurrentUser } from "@/lib/auth/session";
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const user = await getCurrentUser();
+
   return (
     <header className="sticky top-0 z-50 border-b border-border/80 bg-background/95 backdrop-blur">
       <div className="container flex h-16 items-center justify-between gap-3">
@@ -22,16 +27,25 @@ export function SiteHeader() {
           <Link className="text-sm font-medium hover:text-primary" href="/#promociones">
             Promociones
           </Link>
-          <Link className="text-sm font-medium hover:text-primary" href="/login">
-            Ingresar
-          </Link>
+          {user ? (
+            <form action={logoutAction}>
+              <button
+                className="inline-flex items-center gap-1.5 text-sm font-medium hover:text-primary"
+                type="submit"
+              >
+                <LogOut aria-hidden="true" className="size-4" /> Salir
+              </button>
+            </form>
+          ) : (
+            <Link className="text-sm font-medium hover:text-primary" href="/login">
+              Ingresar
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-1">
           <ThemeSelector />
-          <Button aria-label="Ver carrito" disabled size="icon" variant="ghost">
-            <ShoppingCart aria-hidden="true" className="size-5" />
-          </Button>
+          <CartButton />
           <Button aria-label="Abrir menú" className="md:hidden" size="icon" variant="ghost">
             <Menu aria-hidden="true" className="size-5" />
           </Button>

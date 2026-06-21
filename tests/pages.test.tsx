@@ -1,11 +1,18 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import HomePage from "@/app/page";
 import LoginPage from "@/app/login/page";
 import { SiteHeader } from "@/components/layout/site-header";
 import { CatalogContent } from "@/features/catalog/catalog-content";
+import { CartProvider } from "@/features/cart/cart-provider";
 import type { CatalogProduct } from "@/features/catalog/types";
+
+vi.mock("@/lib/auth/session", () => ({
+  getActiveCustomer: vi.fn(async () => null),
+  getCurrentUser: vi.fn(async () => null),
+  isActiveMember: vi.fn(async () => false),
+}));
 
 const pagination = { page: 1, pageSize: 12, totalCount: 0, totalPages: 1 };
 
@@ -88,19 +95,20 @@ describe("páginas públicas iniciales", () => {
     );
   });
 
-  it("renderiza Acceso y comunica que Auth aún no está habilitado", () => {
-    render(<LoginPage />);
+  it("renderiza el acceso con formulario de inicio de sesión", async () => {
+    render(await LoginPage({ searchParams: Promise.resolve({}) }));
 
     expect(
       screen.getByRole("heading", { level: 1, name: "Ingresá a LogiMarket" }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/el acceso se habilitará en el Sprint 1/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ingresar" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Registrate" })).toHaveAttribute("href", "/registro");
   });
 });
 
 describe("navegación principal", () => {
-  it("expone destinos válidos para inicio, catálogo, promociones y acceso", () => {
-    render(<SiteHeader />);
+  it("expone destinos públicos y acceso para visitantes", async () => {
+    render(<CartProvider>{await SiteHeader()}</CartProvider>);
 
     expect(screen.getByRole("link", { name: "LogiMarket" })).toHaveAttribute("href", "/");
 
@@ -117,5 +125,6 @@ describe("navegación principal", () => {
       "href",
       "/login",
     );
+    expect(screen.getByRole("link", { name: /ver carrito/i })).toHaveAttribute("href", "/carrito");
   });
 });

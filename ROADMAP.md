@@ -5,7 +5,7 @@
 > con la velocidad real del equipo.
 
 **Última actualización:** 2026-06-20  
-**Sprint activo:** Ninguno - Sprint 2 cerrado; Sprint 3 no iniciado
+**Sprint activo:** Sprint 3 cerrado (carrito + pedidos + WhatsApp); Sprint 4 parcialmente cubierto
 
 ## Criterios de prioridad
 
@@ -84,31 +84,41 @@ exista un entorno CI de Supabase reproducible; no bloquean el catálogo B2B nave
 - [x] Crear `/catalogo/[slug]` con detalle y CTA de inicio de sesión.
 - [x] Mantener precios fuera de la consulta pública y conservar RLS vigente.
 
-## Sprint 3 - Precios privados y carrito
+## Sprint 3 - Carrito, pedidos y WhatsApp (Completado: 2026-06-20)
 
-**Objetivo:** experiencia de compra autenticada con cálculos confiables.
+**Objetivo:** transformar el catálogo navegable en transaccional de extremo a extremo.
 
-- [ ] Resolver lista y precio vigente en servidor por cliente/presentación.
-- [ ] Mostrar precios solo a miembros autorizados.
-- [ ] Implementar carrito persistido, cantidades mínimas y observaciones.
-- [ ] Calcular subtotales y total estimado exclusivamente desde datos del servidor.
-- [ ] Manejar cambios de precio/stock y concurrencia con mensajes recuperables.
-- [ ] Probar fuga de precios, mínimos, redondeo y varios dispositivos.
+El alcance ejecutado combinó el Sprint 3 original (precios privados y carrito) con el flujo
+de checkout/pedidos/WhatsApp del Sprint 4, más la base de Auth diferida de Sprint 1.
 
-**Salida:** cliente autenticado arma un carrito válido con importes verificables.
+- [x] Implementar autenticación email/contraseña: login, registro y logout (Server Actions).
+- [x] Resolver lista y precio vigente en servidor por presentación.
+- [x] Mostrar precios solo a miembros activos; visitantes nunca reciben importes.
+- [x] Implementar carrito con persistencia local, cantidades mínimas y presentaciones.
+- [x] Calcular subtotales y total estimado; el total final se recalcula en servidor.
+- [x] Implementar checkout con datos de contacto/dirección y validación Zod.
+- [x] Crear pedido, items snapshot y reserva de stock en transacción (`place_order`).
+- [x] Generar número de pedido e historial de estado inicial.
+- [x] Generar mensaje WhatsApp al número de la organización tras persistir el pedido.
+- [x] Validar mínimos, stock y aislamiento de precios (pruebas SQL y de componentes).
 
-## Sprint 4 - Checkout, pedidos y WhatsApp
+**Diferido a sprints posteriores:** liberación de reservas al cancelar, máquina de estados
+completa, historial/detalle de pedidos del cliente, idempotencia/rate limiting y E2E.
 
-**Objetivo:** completar el primer flujo comercial de extremo a extremo.
+**Salida:** un cliente autenticado arma un carrito válido, confirma un pedido persistido con
+importes verificables y lo comparte por WhatsApp.
 
-- [ ] Implementar checkout con datos de contacto/dirección y validación Zod.
-- [ ] Crear pedido, items snapshot y reserva/descuento de stock en transacción.
-- [ ] Implementar número de pedido y máquina de estados con historial.
+## Sprint 4 - Pedidos del cliente y robustez (pendiente)
+
+**Objetivo:** completar la operación del pedido más allá del primer flujo feliz.
+
+- [x] Checkout con validación Zod y creación transaccional de pedido (adelantado en Sprint 3).
+- [x] Generar mensaje WhatsApp después de persistir el pedido (adelantado en Sprint 3).
+- [ ] Máquina de estados de pedido con transiciones válidas y liberación de reservas.
 - [ ] Crear historial y detalle de pedidos del cliente.
-- [ ] Generar mensaje WhatsApp al `+54 9 11 5146-1419` después de persistir el pedido.
 - [ ] Añadir idempotencia, rate limiting y pruebas de concurrencia/E2E.
 
-**Salida:** pedido real persistido, auditable y compartible por WhatsApp.
+**Salida:** pedido real persistido, auditable, gestionable y compartible por WhatsApp.
 
 ## Sprint 5 - Backoffice operativo
 
@@ -255,3 +265,23 @@ hasta completar todos los ítems pendientes de este gate.
   hasta disponer de Supabase y navegador reproducibles en CI.
 - Lint, typecheck, 15/15 pruebas y build exitosos.
 - Sprint 2 cerrado. Sprint 3 no iniciado; carrito, pedidos, CRM y admin permanecen fuera.
+
+### 2026-06-20 - Cierre de Sprint 3 (carrito + pedidos + WhatsApp)
+
+- Baseline de Sprint 2 commiteada antes de iniciar (estaba sin commit en el working tree).
+- Auth email/contraseña: login, registro y logout con Server Actions; alta de cliente
+  idempotente vía RPC `register_customer` (ADR-020). Confirmación de email desactivada solo
+  en local para validar el flujo completo; producción debe reactivarla.
+- Precios resueltos en servidor y mostrados solo a miembros activos; el detalle de producto
+  ofrece carrito a clientes y CTA de login a visitantes, sin filtrar importes (verificado en
+  runtime y por pruebas).
+- Carrito con persistencia local (`localStorage`), presentaciones, cantidades mínimas,
+  badge en el header y página `/carrito` (ADR-021).
+- Checkout `/checkout` con validación Zod y RPC transaccional `place_order`: resuelve precios,
+  valida mínimos y stock con bloqueo de fila, reserva inventario, genera número y snapshots
+  (ADR-022). Mensaje WhatsApp construido en servidor tras persistir el pedido.
+- Migración aditiva `202606200002_cart_orders.sql` (no se tocó la inicial) y seed con cliente
+  de prueba pre-confirmado para validación local.
+- Suite ampliada a 27 pruebas (carrito, precios por sesión, WhatsApp, checkout). Validado el
+  flujo `place_order` a nivel SQL como cliente autenticado.
+- Gate completo exitoso: `db:reset`, `db:lint`, `db:types`, lint, typecheck, 27/27 y build.

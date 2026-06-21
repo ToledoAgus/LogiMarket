@@ -4,8 +4,8 @@
 > sección "Registro de estado".
 
 **Última actualización:** 2026-06-20  
-**Fase:** Sprint 2 cerrado; Sprint 3 no iniciado
-**Estado general:** Catálogo B2B público navegable, paginado y preparado para SEO
+**Fase:** Sprint 3 cerrado (catálogo transaccional); Sprint 4 parcialmente cubierto
+**Estado general:** Catálogo B2B con auth, precios privados, carrito local, checkout y WhatsApp
 **Fuente de requisitos:** `PROJECT_BRIEF_LOGIMARKET.md`
 
 ## 1. Alcance confirmado
@@ -255,6 +255,9 @@ NEXT_PUBLIC_SITE_URL
 | Datos personales y analítica | Alto | Minimización, retención, consentimiento y política de privacidad antes de tracking. |
 | Next.js 15 frente a versiones nuevas | Medio | Fijar versiones compatibles y actualizar deliberadamente tras pruebas. |
 | Configuración remota de Supabase/Vercel pendiente | Medio | Desarrollo local reproducible y checklist de secretos/entornos. |
+| Registrante auto-activado como cliente (sin aprobación) | Alto | Decisión MVP (ADR-020); incorporar flujo de aprobación pendiente→activo en el backoffice (Sprint 5). |
+| Confirmación de email desactivada en local | Medio | Solo entorno local para validar el flujo; producción debe reactivar `enable_confirmations`. |
+| Reservas de stock no se liberan al cancelar | Medio | Completar la máquina de estados y la liberación de reservas en Sprint 4. |
 
 ## 11. Estado de implementación
 
@@ -263,26 +266,26 @@ NEXT_PUBLIC_SITE_URL
 | Requisitos y arquitectura | Completado | Este documento, roadmap y registro de decisiones. |
 | Proyecto Next.js | Completado | Next.js 15.5.19, TypeScript estricto, Tailwind, Shadcn, pruebas y CI configurados. |
 | Supabase local y migraciones | Completado | Supabase local validado con `db:reset`, `db:lint` y `db:types` exitosos. |
-| Autenticación y RLS | Base completada | Clientes SSR/browser, middleware, perfiles, roles y RLS implementados; pantallas Auth completas permanecen en el backlog del MVP. |
-| Catálogo / carrito / pedidos | Sprint 2 completado | Catálogo público cerrado; carrito y pedidos permanecen pendientes en Sprints 3-4. |
+| Autenticación y RLS | Completado (MVP) | Login/registro/logout con Supabase Auth; alta de cliente vía RPC `register_customer`; RLS y guardas de servidor activas. Aprobación comercial de clientes y recuperación de contraseña pendientes. |
+| Catálogo / carrito / pedidos | Sprint 3 completado | Precios privados, carrito local, checkout transaccional (`place_order`) y WhatsApp implementados. Historial/detalle de pedidos del cliente pendiente. |
 | Administración / CRM / PDF | Pendiente | Sprints 5-7. |
 | Producción | Pendiente | Sprint 8. |
 
 ## 12. Próximo Sprint Recomendado
 
-**Sprint 3 - Precios privados y carrito (no iniciado).**
+**Sprint 4 - Pedidos del cliente y robustez (no iniciado).**
 
-Alcance exacto:
+Alcance recomendado:
 
-- Resolver la lista y el precio vigente en servidor por cliente y presentación.
-- Mostrar precios únicamente a miembros autenticados y autorizados.
-- Implementar carrito persistido, cantidades mínimas y observaciones.
-- Calcular subtotales y total estimado exclusivamente desde el servidor.
-- Manejar cambios de precio o stock con mensajes recuperables.
-- Probar aislamiento de precios, mínimos, redondeo y persistencia multidispositivo.
+- Implementar máquina de estados del pedido con transiciones válidas y liberación de
+  reservas de stock al cancelar.
+- Crear historial y detalle de pedidos del cliente (`/pedidos`).
+- Añadir recuperación de contraseña y reenvío de confirmación de email.
+- Incorporar idempotencia y rate limiting en checkout y endpoints sensibles.
+- Sumar smoke E2E del flujo login → carrito → checkout → WhatsApp.
 
-**Salida esperada:** un cliente autenticado arma un carrito válido con importes
-verificables. Sprint 3 queda recomendado, pero no se inicia mediante este cierre.
+**Salida esperada:** el cliente gestiona y consulta sus pedidos, y el flujo comercial es
+robusto frente a concurrencia y reintentos.
 
 ## 13. Registro de estado (append-only)
 
@@ -408,3 +411,30 @@ verificables. Sprint 3 queda recomendado, pero no se inicia mediante este cierre
   en CI; no se agregó complejidad operativa para duplicar la cobertura actual.
 - Gate de cierre exitoso: lint, typecheck, 15/15 pruebas y build de producción.
 - No se inició carrito, pedidos, CRM ni administración. Sprint 3 permanece no iniciado.
+
+### 2026-06-20 - Implementación y cierre de Sprint 3 (carrito + pedidos + WhatsApp)
+
+- Revisión previa completa: brief, estado, roadmap y decisiones contrastados con el código.
+  Se detectó que toda la implementación de Sprint 2 estaba sin commitear y que la
+  autenticación de Sprint 1 no existía; ambos puntos se informaron antes de comenzar.
+- Baseline de Sprint 2 commiteada en la rama `feat/sprint-3-cart-orders` antes de iniciar.
+- Autenticación email/contraseña con Server Actions (login, registro, logout). Alta de
+  cliente mediante RPC `register_customer` (`security definer`, idempotente, auto-activa en
+  el MVP). Confirmación de email desactivada solo en local (ADR-020).
+- Precios resueltos en servidor desde `product_prices` y mostrados únicamente a miembros
+  activos; visitantes no reciben importes (verificado en runtime: el detalle público no
+  filtra precios).
+- Carrito con persistencia local (`localStorage`), presentaciones, cantidades mínimas, badge
+  en header, página `/carrito` y subtotal estimado (ADR-021).
+- Checkout `/checkout` con validación Zod y RPC transaccional `place_order`: resuelve precios,
+  valida mínimos y stock con bloqueo de fila, reserva inventario con movimiento, genera número
+  y snapshots, y devuelve total. Enlace `wa.me` construido en servidor tras persistir (ADR-022).
+- Migración aditiva `202606200002_cart_orders.sql` (no se modificó la inicial) y seed con un
+  cliente de prueba pre-confirmado para validación de extremo a extremo.
+- Flujo `place_order` validado a nivel SQL como cliente autenticado: pedido, snapshots y
+  reserva correctos; mínimos, stock e idempotencia de `register_customer` verificados.
+- Suite ampliada a 27 pruebas (carrito, precios por sesión, WhatsApp, checkout, dinero).
+- Gate de cierre exitoso, sin omisiones: `db:reset`, `db:lint`, `db:types`, lint, typecheck,
+  27/27 pruebas y build de producción.
+- Riesgos abiertos: aprobación comercial de clientes diferida, confirmación de email local
+  desactivada y reservas de stock sin liberación automática (ver sección 10).

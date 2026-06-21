@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { getApplicablePrices } from "@/features/catalog/prices";
 import { ProductDetail } from "@/features/catalog/product-detail";
 import { getCatalogProduct } from "@/features/catalog/queries";
+import { isActiveMember } from "@/lib/auth/session";
 
 type ProductPageProps = { params: Promise<{ slug: string }> };
 
@@ -33,5 +35,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
   if (!product) notFound();
 
-  return <ProductDetail product={product} />;
+  const member = await isActiveMember();
+  const prices = member ? (await getApplicablePrices([product.id])).get(product.id) ?? [] : [];
+
+  return <ProductDetail prices={prices} product={product} />;
 }
