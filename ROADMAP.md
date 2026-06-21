@@ -4,8 +4,8 @@
 > son de actualización; la duración se expresa en sprints de dos semanas y se ajustará
 > con la velocidad real del equipo.
 
-**Última actualización:** 2026-06-20  
-**Sprint activo:** Sprint 3 cerrado (carrito + pedidos + WhatsApp); Sprint 4 parcialmente cubierto
+**Última actualización:** 2026-06-21  
+**Sprint activo:** Sprint 3 cerrado y validado en local; preview remoto pendiente; Sprint 4 sin iniciar
 
 ## Criterios de prioridad
 
@@ -305,3 +305,14 @@ hasta completar todos los ítems pendientes de este gate.
   sin `service_role` expuesta.
 - Validación funcional del flujo en preview a cargo del usuario (manual). Sigue **sin merge** y
   Sprint 4 sin iniciar.
+
+### 2026-06-21 - Cierre de sesión
+
+- Decisión tomada: usar un **proyecto Supabase dedicado al preview** (ADR-023); no se toca
+  `deizsoojahyjfowyeuda` ni Production. Etapa 2 (db push) queda a la espera de credenciales del
+  nuevo proyecto.
+- Gate de calidad re-validado al cierre: `db:reset`, `db:lint`, `db:types` (sin diff), `lint`,
+  `typecheck`, `test` 27/27 y `build` — todos OK. Working tree limpio.
+- PR #1 OPEN, MERGEABLE, **sin merge**. Sprint 4 sin iniciar.
+- Próximo objetivo: crear/configurar el Supabase Preview independiente y validar el PR sin
+  riesgo para producción (ver `NEXT_SESSION_START` en PROJECT_STATE.md).

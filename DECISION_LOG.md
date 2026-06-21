@@ -405,3 +405,26 @@ número de la organización.
 **Consecuencias:** El total es determinista y auditable, y la sobreventa queda mitigada por
 el bloqueo. Las reservas no se liberan automáticamente al cancelar un pedido; esa máquina de
 estados y la confirmación administrativa se completarán en Sprint 4/5.
+
+### ADR-023 - Proyecto Supabase dedicado para validar el preview (no tocar el compartido)
+
+**Fecha:** 2026-06-21
+**Estado:** Aceptada
+**Reemplaza:** N/A
+
+**Contexto:** El proyecto Supabase `deizsoojahyjfowyeuda` y las variables `NEXT_PUBLIC_*` en
+Vercel están compartidos por los entornos Preview y Production. Aplicarle migraciones con
+`supabase db push` para validar el PR afectaría la base que sirve a producción, lo que viola
+la restricción de no impactar producción.
+
+**Decisión:** No ejecutar `db push` ni cargar seed contra `deizsoojahyjfowyeuda`. Crear/usar un
+proyecto Supabase **dedicado al preview** de la rama `feat/sprint-3-cart-orders`, apuntar allí
+las variables de Preview scopeadas a la rama (URL + anon, sin `service_role`), aplicar
+migraciones y un seed comercial mínimo, y validar el flujo contra ese proyecto. Production y su
+Supabase quedan intactos.
+
+**Consecuencias:** La validación del preview no arriesga producción y queda reproducible. Se
+introduce una dependencia operativa (un proyecto Supabase extra para preview) y la necesidad de
+credenciales del nuevo proyecto antes de ejecutar. El merge del PR queda condicionado a esta
+validación. La corrección de la URL en Production (que conserva el sufijo `/rest/v1/`) queda
+pendiente como tarea separada, fuera del alcance de esta decisión.

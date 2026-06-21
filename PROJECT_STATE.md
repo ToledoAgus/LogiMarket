@@ -3,10 +3,11 @@
 > Documento vivo. Actualizar en cada cambio relevante sin borrar el historial de la
 > sección "Registro de estado".
 
-**Última actualización:** 2026-06-20  
-**Fase:** Sprint 3 cerrado (catálogo transaccional); Sprint 4 parcialmente cubierto
+**Última actualización:** 2026-06-21  
+**Fase:** Sprint 3 cerrado y validado en local; validación del preview remoto bloqueada (infra)
 **Estado general:** Catálogo B2B con auth, precios privados, carrito local, checkout y WhatsApp
 **Fuente de requisitos:** `PROJECT_BRIEF_LOGIMARKET.md`
+**Próximo objetivo:** ver sección `NEXT_SESSION_START` al final del documento
 
 ## 1. Alcance confirmado
 
@@ -487,3 +488,103 @@ robusto frente a concurrencia y reintentos.
 - Pendiente para validación funcional completa en preview: aplicar migraciones/seed al Supabase
   remoto (Etapa 2, congelada) y resolver el acceso (Deployment Protection 401). Hasta entonces el
   preview corregido alcanza Supabase, pero el catálogo/login no tendrán datos.
+
+### 2026-06-21 - Cierre de sesión
+
+**Estado real:** Sprint 3 implementado, validado de extremo a extremo contra Supabase local y
+mergeable en GitHub. La validación del preview en Vercel está bloqueada por infraestructura, no
+por código. Decisión tomada: usar un Supabase dedicado al preview (ADR-023).
+
+**Sprints:**
+
+- Sprint 0: completado.
+- Sprint 1: completado (Auth funcional incorporada en Sprint 3).
+- Sprint 2: completado (catálogo público).
+- Sprint 3: completado a nivel código y validado en local; pendiente la validación en el
+  preview remoto. Absorbió el alcance de checkout/pedidos/WhatsApp del Sprint 4.
+
+**Validaciones al cierre (todas OK):** `db:reset`, `db:lint` (sin errores de esquema),
+`db:types` (sin diff), `lint`, `typecheck`, `test` (27/27), `build`.
+
+**Git:** rama `feat/sprint-3-cart-orders`; último commit de código `0f93654` (Sprint 3) + fix
+`0a505bf`; HEAD de docs al cierre. Working tree limpio. PR #1 OPEN, MERGEABLE, sin merge.
+
+**Infraestructura:**
+
+- *Supabase local:* operativo. Migraciones `…0001_initial_schema` y `…0002_cart_orders`
+  aplicadas; seed validado (incluye cliente de prueba pre-confirmado); RLS validada
+  (catálogo público sin precios, precios solo a miembros, pedidos vía RPC `place_order`).
+- *Supabase remoto (`deizsoojahyjfowyeuda`):* vivo, pero **compartido por Preview y Production**.
+  Migraciones/seed **no confirmadas** y **no aplicadas** (db push congelado). No se debe tocar.
+- *Vercel Preview (rama):* `NEXT_PUBLIC_SUPABASE_URL` corregida (sin `/rest/v1/`) y
+  `NEXT_PUBLIC_SITE_URL` definidas, scopeadas a la rama; build `8nw2hqzhm` Ready; acceso 401
+  (Deployment Protection). *Vercel Production:* intacto, conserva URL con `/rest/v1/` (pendiente).
+  Sin `service_role` en ningún entorno.
+
+**Bloqueos actuales:**
+
+1. Preview y Production comparten el mismo Supabase y variables.
+2. No se realizó `db push` remoto (congelado por el bloqueo 1).
+3. No existe aún un proyecto Supabase Preview dedicado.
+4. Deployment Protection (401) impide validar el preview de forma anónima.
+5. PR #1 permanece sin mergear.
+
+**Riesgos abiertos:** ver sección 10 (URL de Production mal formada, migraciones remotas sin
+confirmar, aprobación de clientes diferida, confirmación de email local desactivada, reservas
+de stock sin liberación, cliente auto-activado).
+
+**Próximos pasos recomendados:** crear/configurar el Supabase Preview independiente, apuntar las
+variables de Preview de la rama, `db push` + seed comercial mínimo, validar el flujo completo y
+dejar el PR listo para revisión (ver `NEXT_SESSION_START`).
+
+---
+
+# NEXT_SESSION_START
+
+**Objetivo de la próxima sesión:** crear y configurar un **proyecto Supabase Preview
+independiente** para validar el PR #1 sin riesgo para producción.
+
+### 1. Leer primero (en este orden)
+1. `PROJECT_STATE.md` — esta entrada de cierre y secciones 10-12.
+2. `ROADMAP.md` — entradas del 2026-06-20/21 (cierre de Sprint 3 y remediación).
+3. `DECISION_LOG.md` — ADR-020 a ADR-023.
+
+### 2. Qué NO debe tocarse
+- El proyecto Supabase `deizsoojahyjfowyeuda` (no `db push`, no seed, no esquema).
+- Las variables ni los deployments de **Production** en Vercel.
+- La lógica funcional del código (Sprint 3 ya validado); solo correcciones de preview si hicieran falta.
+- No mergear el PR #1 sin confirmación. No iniciar Sprint 4.
+- No exponer `service_role`. No borrar historial de documentación.
+
+### 3. Qué verificar antes de continuar
+- Supabase local levantado (`npm run db:start` si hace falta) y gate verde
+  (`db:reset`/`db:lint`/`db:types`/`lint`/`typecheck`/`test`/`build`).
+- Rama `feat/sprint-3-cart-orders` con working tree limpio y PR #1 aún OPEN.
+- Recibir del usuario los datos del **nuevo** proyecto Supabase Preview: `project-ref`, URL base
+  (sin `/rest/v1/`), `anon key`, DB password y access token (o `supabase login`). **No** pedir/usar `service_role`.
+
+### 4. Decisiones ya tomadas
+- Sprint 3 combina precios + carrito + checkout + pedidos + WhatsApp (más Auth base).
+- Opción elegida: Supabase **dedicado** al preview (ADR-023); no usar el compartido.
+- Validación del flujo en preview vía dev local apuntado al nuevo Supabase (el preview de Vercel
+  está protegido con 401); el usuario también confirma visualmente.
+
+### 5. Próximo objetivo (pasos)
+1. Vercel: apuntar `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Preview, rama)
+   al nuevo proyecto.
+2. `supabase link --project-ref <nuevo>` + `supabase db push`.
+3. Cargar seed comercial mínimo (marcas, categorías, productos, precios), sin usuario de prueba.
+4. Validar: home, catálogo con productos, detalle sin precios para visitante, registro/login,
+   precios para cliente, carrito, checkout, pedido en Supabase, WhatsApp.
+5. Documentar en `PROJECT_STATE.md` y `ROADMAP.md`; dejar el PR **listo para merge, sin mergear**.
+
+---
+
+# RESTRICCIONES PERMANENTES
+
+- No mergear el PR #1 sin confirmación explícita.
+- No iniciar Sprint 4.
+- No ejecutar `db push` (ni seed) sobre `deizsoojahyjfowyeuda`.
+- No modificar Production (Vercel ni su Supabase).
+- No exponer ni configurar `service_role` en Vercel ni en el cliente.
+- No eliminar documentación histórica (todas las entradas son append-only).
