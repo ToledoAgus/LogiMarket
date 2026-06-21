@@ -1,0 +1,221 @@
+# LogiMarket - Roadmap
+
+> Documento vivo y acumulativo. Marcar tareas sin eliminar entradas previas. Las fechas
+> son de actualización; la duración se expresa en sprints de dos semanas y se ajustará
+> con la velocidad real del equipo.
+
+**Última actualización:** 2026-06-20  
+**Sprint activo:** Ninguno - Sprint 2 habilitado, todavía no iniciado
+
+## Criterios de prioridad
+
+1. Seguridad y aislamiento de datos.
+2. Camino vertical catálogo -> autenticación -> precio -> carrito -> pedido.
+3. Operación administrativa necesaria para sostener ese camino.
+4. CRM, analítica y PDF sobre datos reales.
+5. Optimización y endurecimiento para producción.
+
+## Definición de terminado global
+
+Una tarea se considera completada cuando el código está tipado, validado, probado en
+el nivel correspondiente, es usable en móvil, respeta RLS, incluye estados de carga,
+vacío y error, y deja actualizados `PROJECT_STATE.md`, `ROADMAP.md` y, si aplica,
+`DECISION_LOG.md`.
+
+## Sprint 0 - Fundaciones y experiencia base
+
+**Objetivo:** repositorio reproducible, arquitectura ejecutable y estándares de calidad.
+
+- [x] Leer y analizar íntegramente el brief.
+- [x] Diseñar arquitectura, modelo de datos, roles, permisos y estrategia RLS.
+- [x] Documentar riesgos, dependencias y orden de implementación.
+- [x] Inicializar Git y Next.js 15 con App Router, TypeScript, Tailwind y `src/`.
+- [x] Configurar lint, formato, TypeScript estricto y aliases.
+- [x] Instalar/configurar Shadcn UI y tokens de marca.
+- [x] Crear shell mobile first, metadatos, selector claro/oscuro/automático y páginas base.
+- [x] Añadir `.env.example`, validación de entorno y manejo común de errores.
+- [x] Configurar pruebas unitarias y CI inicial (lint, typecheck, test, build).
+
+**Salida:** aplicación base ejecutable localmente, sin secretos ni mocks de negocio.
+
+## Sprint 1 - Supabase, esquema, Auth y seguridad (Completado: 2026-06-20)
+
+**Objetivo:** persistencia multiempresa y acceso seguro validados localmente.
+
+- [x] Inicializar Supabase local y migraciones versionadas.
+- [x] Crear tipos SQL, tablas, constraints, índices, triggers y funciones del núcleo.
+- [x] Crear seed idempotente con organización y cinco productos iniciales.
+- [x] Implementar políticas RLS y Storage deny-by-default.
+- [x] Generar tipos TypeScript desde PostgreSQL.
+- [x] Integrar clientes Supabase browser/server y refresco SSR de sesión.
+- [ ] Implementar registro, confirmación, login, logout y recuperación.
+- [ ] Crear guardas por rol y pruebas negativas de acceso cruzado/anon/precios.
+
+**Cierre del Sprint 1:** completado y validado localmente el 2026-06-20. El gate
+Docker/Supabase quedó resuelto con reset, lint y generación de tipos exitosos. Las
+tareas funcionales de Auth que permanecen abiertas continúan en el backlog del MVP,
+pero ya no bloquean el inicio futuro de Sprint 2.
+
+**Salida:** un usuario puede autenticarse y solo acceder a datos permitidos de su tenant.
+
+## Sprint 2 - Catálogo público (Habilitado, no iniciado)
+
+**Objetivo:** catálogo real, rápido y accesible sin exponer precios.
+
+- [ ] Implementar home, listado, detalle, búsqueda, filtros y paginación.
+- [ ] Implementar categorías jerárquicas, marcas, imágenes y promociones públicas.
+- [ ] Mostrar disponibilidad sin filtrar datos sensibles de inventario.
+- [ ] Optimizar imágenes, SEO, Open Graph, sitemap y datos estructurados.
+- [ ] Añadir estados de carga/error/vacío y pruebas responsive/E2E.
+
+**Salida:** visitante navega el catálogo completo; precio y compra disparan autenticación.
+
+## Sprint 3 - Precios privados y carrito
+
+**Objetivo:** experiencia de compra autenticada con cálculos confiables.
+
+- [ ] Resolver lista y precio vigente en servidor por cliente/presentación.
+- [ ] Mostrar precios solo a miembros autorizados.
+- [ ] Implementar carrito persistido, cantidades mínimas y observaciones.
+- [ ] Calcular subtotales y total estimado exclusivamente desde datos del servidor.
+- [ ] Manejar cambios de precio/stock y concurrencia con mensajes recuperables.
+- [ ] Probar fuga de precios, mínimos, redondeo y varios dispositivos.
+
+**Salida:** cliente autenticado arma un carrito válido con importes verificables.
+
+## Sprint 4 - Checkout, pedidos y WhatsApp
+
+**Objetivo:** completar el primer flujo comercial de extremo a extremo.
+
+- [ ] Implementar checkout con datos de contacto/dirección y validación Zod.
+- [ ] Crear pedido, items snapshot y reserva/descuento de stock en transacción.
+- [ ] Implementar número de pedido y máquina de estados con historial.
+- [ ] Crear historial y detalle de pedidos del cliente.
+- [ ] Generar mensaje WhatsApp al `+54 9 11 5146-1419` después de persistir el pedido.
+- [ ] Añadir idempotencia, rate limiting y pruebas de concurrencia/E2E.
+
+**Salida:** pedido real persistido, auditable y compartible por WhatsApp.
+
+## Sprint 5 - Backoffice operativo
+
+**Objetivo:** administrar catálogo y operación sin acceso directo a base de datos.
+
+- [ ] Shell administrativo y navegación adaptativa por permisos.
+- [ ] CRUD de productos, imágenes, categorías y marcas.
+- [ ] Gestión de listas/precios con historial inmutable.
+- [ ] Gestión de inventario mediante movimientos y alertas de stock crítico.
+- [ ] Gestión de promociones, combos, destacados y etiquetas.
+- [ ] Gestión de pedidos y transiciones válidas de estado.
+- [ ] Auditoría, validación de archivos y pruebas de permisos subadmin/admin.
+
+**Salida:** admin mantiene el negocio; subadmin solo pedidos, clientes y stock.
+
+## Sprint 6 - CRM y dashboard
+
+**Objetivo:** dar visibilidad comercial accionable sobre información real.
+
+- [ ] CRUD y ficha de clientes con estado, zona y datos de contacto.
+- [ ] Calcular historial, ticket promedio, frecuencia y última compra.
+- [ ] Implementar KPIs y gráficos por período con zona horaria definida.
+- [ ] Incorporar productos vendidos, más vendidos, más vistos y stock crítico.
+- [ ] Definir retención/privacidad de eventos de vistas y optimizar consultas.
+
+**Salida:** equipo comercial consulta cartera y métricas consistentes.
+
+## Sprint 7 - Catálogo PDF
+
+**Objetivo:** catálogo descargable coherente con sesión y datos vigentes.
+
+- [ ] Ejecutar spike de librería, peso, fuentes, imágenes y límites de Vercel.
+- [ ] Diseñar portada, grilla, información comercial, WhatsApp y QR.
+- [ ] Generar variante pública sin precios y privada con precios aplicables.
+- [ ] Añadir acceso desde home, catálogo y admin; regeneración y caché segura.
+- [ ] Probar autorización, paginación visual, volumen y accesibilidad del enlace.
+
+**Salida:** PDF vigente sin posibilidad de filtrar precios entre variantes.
+
+## Sprint 8 - Producción y lanzamiento
+
+**Objetivo:** lanzamiento observable, reversible y protegido.
+
+- [ ] Auditoría de RLS, secretos, dependencias, cabeceras, CSP y rate limits.
+- [ ] Pruebas E2E completas, accesibilidad WCAG 2.2 AA y performance móvil.
+- [ ] Configurar Supabase remoto, migraciones, backups y Storage.
+- [ ] Configurar GitHub, CI protegida y Vercel preview/staging/production.
+- [ ] Añadir observabilidad, alertas, runbooks y procedimiento de rollback.
+- [ ] Ejecutar carga inicial, smoke test y checklist de aceptación.
+
+**Salida:** MVP desplegado con monitoreo y operación documentada.
+
+## Después del MVP
+
+- [ ] Facturación, impuestos y documentos comerciales según normativa validada.
+- [ ] Notificaciones transaccionales y automatización comercial.
+- [ ] Importaciones/exportaciones masivas e integración con ERP/logística.
+- [ ] Portal B2C aislado por canal y política de precios.
+- [ ] Autoservicio multiempresa, planes, límites, onboarding y facturación SaaS.
+
+## Dependencias de secuencia
+
+```text
+Sprint 0 -> Sprint 1 -> Sprint 2 -> Sprint 3 -> Sprint 4
+                                \-> Sprint 5 -> Sprint 6
+                                             \-> Sprint 7 -> Sprint 8
+```
+
+El PDF se posterga hasta estabilizar catálogo/precios; el dashboard hasta disponer de
+pedidos reales; el panel se construye después de probar RLS y flujo de cliente.
+
+## Historial de roadmap (append-only)
+
+### 2026-06-20
+
+- Roadmap inicial creado en nueve sprints, priorizando el flujo comercial vertical y
+  las restricciones de seguridad antes de ampliar la superficie administrativa.
+- Sprint 0 iniciado; análisis y documentación completados.
+- Base Next.js implementada y verificada con lint, typecheck y build de producción.
+- Pendiente para cerrar Sprint 0: pruebas automatizadas y workflow de CI.
+
+### 2026-06-20 - Cierre de Sprint 0
+
+- Vitest, React Testing Library y `jsdom` configurados con cuatro pruebas de render y
+  navegación para las páginas públicas iniciales.
+- Workflow de GitHub Actions agregado con instalación reproducible y cadena completa de
+  lint, tipos, pruebas y build sobre Node.js 22.
+- Validación local completa exitosa; Sprint 0 cerrado.
+- Sprint 1 permanece sin iniciar por restricción explícita de esta iteración.
+
+### 2026-06-20 - Cierre de Sprint 1
+
+- Configuración Supabase, migración inicial de 18 tablas, seed idempotente, RLS, Storage
+  y clientes SSR/browser implementados.
+- Contratos automatizados comprueban RLS en todas las tablas y que la proyección pública
+  no contiene importes; 8/8 pruebas, lint, tipos y build pasan.
+- Supabase CLI reconoce el proyecto, pero Docker Desktop no está disponible para aplicar
+  la migración, ejecutar `db lint` o generar los tipos desde PostgreSQL.
+- Sprint 1 cerrado según criterios explícitos. Antes de Sprint 2 sigue vigente el gate:
+  ejecutar reset/lint/tipos y completar flujos Auth y pruebas RLS con usuarios reales.
+
+### 2026-06-20 - Gate Supabase local bloqueado
+
+- [x] Verificar Node.js, npm, Supabase CLI, WSL y disponibilidad de Docker Desktop.
+- [ ] Instalar y abrir Docker Desktop hasta que `docker version` muestre cliente y servidor.
+- [ ] Ejecutar `npm run db:start`.
+- [ ] Ejecutar `npm run db:reset` y verificar migración más seed.
+- [ ] Ejecutar `npm run db:lint` sin errores.
+- [ ] Ejecutar `npm run db:types` y versionar los tipos generados.
+- [x] Revalidar aplicación: lint, tipos, 8/8 pruebas y build exitosos.
+
+Docker Desktop y `docker` están ausentes; WSL 2 está preparado y `winget` no existe.
+Las instrucciones exactas quedaron en `supabase/README.md`. Sprint 2 no puede comenzar
+hasta completar todos los ítems pendientes de este gate.
+
+### 2026-06-20 - Gate Supabase local resuelto y Sprint 2 habilitado
+
+- [x] Ejecutar `npm run db:reset` y verificar migración más seed.
+- [x] Ejecutar `npm run db:lint` sin errores.
+- [x] Ejecutar `npm run db:types` y generar los tipos desde PostgreSQL local.
+- [x] Revalidar lint, typecheck, test y build.
+- Sprint 1 quedó completado y cerrado el 2026-06-20.
+- El gate Docker/Supabase quedó resuelto; Sprint 2 está habilitado, pero ninguna de sus
+  tareas fue iniciada.

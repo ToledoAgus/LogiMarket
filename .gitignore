@@ -1,0 +1,33 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# tests and builds
+/coverage
+/.next
+/out
+/playwright-report
+/test-results
+
+# local environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# deployment and tooling
+.vercel
+.supabase/
+/supabase/.branches
+/supabase/.temp
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+
+# operating systems and editors
+.DS_Store
+Thumbs.db
+.idea
+.vscode/*
+!.vscode/extensions.json
