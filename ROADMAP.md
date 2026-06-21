@@ -285,3 +285,13 @@ hasta completar todos los ítems pendientes de este gate.
 - Suite ampliada a 27 pruebas (carrito, precios por sesión, WhatsApp, checkout). Validado el
   flujo `place_order` a nivel SQL como cliente autenticado.
 - Gate completo exitoso: `db:reset`, `db:lint`, `db:types`, lint, typecheck, 27/27 y build.
+
+### 2026-06-20 - Validación del preview de Vercel (PR #1): bloqueada, sin merge
+
+- Variables en Vercel correctas en presencia (URL + anon, Preview + Production); anon marcada
+  *Sensitive* y sin `service_role` expuesta. Falta `NEXT_PUBLIC_SITE_URL`.
+- Bloqueante: `NEXT_PUBLIC_SUPABASE_URL` termina en `/rest/v1/` y rompe los endpoints de
+  Supabase (catálogo y login). El preview además está protegido (401) y no se pudo validar el
+  flujo de forma anónima. Las migraciones/seed del Supabase remoto no pudieron confirmarse.
+- Decisión: **no mergear** hasta corregir la URL, confirmar migraciones/seed remotas y
+  revalidar el flujo. El flujo end-to-end permanece validado contra Supabase local.

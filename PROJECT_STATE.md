@@ -258,6 +258,9 @@ NEXT_PUBLIC_SITE_URL
 | Registrante auto-activado como cliente (sin aprobación) | Alto | Decisión MVP (ADR-020); incorporar flujo de aprobación pendiente→activo en el backoffice (Sprint 5). |
 | Confirmación de email desactivada en local | Medio | Solo entorno local para validar el flujo; producción debe reactivar `enable_confirmations`. |
 | Reservas de stock no se liberan al cancelar | Medio | Completar la máquina de estados y la liberación de reservas en Sprint 4. |
+| `NEXT_PUBLIC_SUPABASE_URL` remota mal formada (`/rest/v1/`) | Alto | Corregir a la URL base del proyecto; rompe catálogo y login en Vercel. |
+| Migraciones/seed del Supabase remoto sin confirmar | Alto | `supabase db push` y carga de datos reales antes de mergear/desplegar. |
+| Deployment Protection impide validar el preview | Medio | Ajustar protección o usar bypass para revalidar el flujo en Vercel. |
 
 ## 11. Estado de implementación
 
@@ -438,3 +441,30 @@ robusto frente a concurrencia y reintentos.
   27/27 pruebas y build de producción.
 - Riesgos abiertos: aprobación comercial de clientes diferida, confirmación de email local
   desactivada y reservas de stock sin liberación automática (ver sección 10).
+
+### 2026-06-20 - Validación del preview de Vercel (PR #1) - BLOQUEADA
+
+- Objetivo: confirmar que el preview de Vercel use variables correctas y datos reales antes
+  de mergear `feat/sprint-3-cart-orders`.
+- Variables en Vercel (`logi-market`, Preview + Production): `NEXT_PUBLIC_SUPABASE_URL` y
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` presentes. La anon key está marcada *Sensitive* (no legible
+  por CLI), y **no existe `SUPABASE_SERVICE_ROLE_KEY`**: no hay claves de servicio expuestas
+  al cliente. Falta `NEXT_PUBLIC_SITE_URL` (usa el default `localhost:3000`).
+- **Bloqueante 1 (configuración):** `NEXT_PUBLIC_SUPABASE_URL` está como
+  `https://deizsoojahyjfowyeuda.supabase.co/rest/v1/`. `@supabase/ssr` agrega las rutas
+  `/rest/v1`, `/auth/v1`, etc., por lo que el sufijo produce endpoints inválidos
+  (`/rest/v1//rest/v1`, `/rest/v1//auth/v1`) y rompe catálogo y login. Debe ser la URL base
+  del proyecto, sin path.
+- **Bloqueante 2 (acceso):** el deployment de preview responde 401 (Deployment Protection de
+  Vercel), por lo que no se pudo abrir la app ni validar el flujo (home, catálogo, login,
+  carrito, checkout) de forma anónima.
+- **Migraciones remotas: NO CONFIRMADAS.** El proyecto Supabase remoto existe y responde
+  (PostgREST devuelve 401 por falta de apikey), pero no se pudo verificar el esquema ni el
+  seed porque la anon key no es legible y no hay credenciales de base de datos disponibles.
+- **Decisión: NO mergear.** Por la regla "si faltan migraciones o seed en Supabase remoto, no
+  mergear" y al no poder confirmarlas, el merge queda bloqueado hasta resolver los puntos
+  anteriores. El flujo end-to-end sí está validado contra Supabase local.
+- Remediación propuesta: (1) corregir `NEXT_PUBLIC_SUPABASE_URL` a la URL base sin `/rest/v1/`;
+  (2) definir `NEXT_PUBLIC_SITE_URL`; (3) `supabase link` + `supabase db push` al proyecto
+  remoto y cargar datos reales (sin el usuario de prueba del seed en producción); (4) ajustar
+  Deployment Protection o usar un bypass para revalidar el flujo en el preview.
