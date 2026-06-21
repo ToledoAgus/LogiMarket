@@ -71,4 +71,16 @@ describe("initial RLS contract", () => {
       /on public\.product_prices\s+for select to anon/,
     );
   });
+
+  it("limits the public catalog to active products and active related entities", () => {
+    const catalogView = migration.match(
+      /create view public\.public_catalog_products[\s\S]+?comment on view/,
+    )?.[0];
+
+    expect(catalogView).toContain("where p.is_active");
+    expect(catalogView).toContain("b.is_active");
+    expect(catalogView).toContain("c.is_active");
+    expect(catalogView).toContain("available_quantity");
+    expect(catalogView).not.toContain("reserved_quantity");
+  });
 });

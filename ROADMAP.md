@@ -5,7 +5,7 @@
 > con la velocidad real del equipo.
 
 **Última actualización:** 2026-06-20  
-**Sprint activo:** Ninguno - Sprint 2 habilitado, todavía no iniciado
+**Sprint activo:** Ninguno - Sprint 2 cerrado; Sprint 3 no iniciado
 
 ## Criterios de prioridad
 
@@ -58,17 +58,31 @@ pero ya no bloquean el inicio futuro de Sprint 2.
 
 **Salida:** un usuario puede autenticarse y solo acceder a datos permitidos de su tenant.
 
-## Sprint 2 - Catálogo público (Habilitado, no iniciado)
+## Sprint 2 - Catálogo público (Completado: 2026-06-20)
 
 **Objetivo:** catálogo real, rápido y accesible sin exponer precios.
 
-- [ ] Implementar home, listado, detalle, búsqueda, filtros y paginación.
-- [ ] Implementar categorías jerárquicas, marcas, imágenes y promociones públicas.
-- [ ] Mostrar disponibilidad sin filtrar datos sensibles de inventario.
-- [ ] Optimizar imágenes, SEO, Open Graph, sitemap y datos estructurados.
-- [ ] Añadir estados de carga/error/vacío y pruebas responsive/E2E.
+- [x] Implementar home, listado, detalle, búsqueda, filtros y paginación.
+- [x] Implementar categorías jerárquicas, marcas, imágenes y promociones públicas.
+- [x] Mostrar disponibilidad sin filtrar datos sensibles de inventario.
+- [x] Optimizar imágenes, metadata, Open Graph básico y datos estructurados de producto.
+- [x] Añadir estados de carga/error/vacío y pruebas automatizadas de UI y contratos.
+
+**Diferido deliberadamente:** sitemap completo y Playwright E2E se incorporarán cuando
+exista un entorno CI de Supabase reproducible; no bloquean el catálogo B2B navegable.
 
 **Salida:** visitante navega el catálogo completo; precio y compra disparan autenticación.
+
+**Avance del primer incremento:**
+
+- [x] Conectar listado y detalle con datos reales de Supabase, sin mocks.
+- [x] Mostrar productos activos, imagen principal, marca, categoría, descripción y stock.
+- [x] Mostrar badges de promoción y destacado.
+- [x] Implementar grid mobile first de 1/2/4 columnas.
+- [x] Implementar búsqueda por nombre y filtro por categoría.
+- [x] Implementar estados loading, vacío y error.
+- [x] Crear `/catalogo/[slug]` con detalle y CTA de inicio de sesión.
+- [x] Mantener precios fuera de la consulta pública y conservar RLS vigente.
 
 ## Sprint 3 - Precios privados y carrito
 
@@ -219,3 +233,25 @@ hasta completar todos los ítems pendientes de este gate.
 - Sprint 1 quedó completado y cerrado el 2026-06-20.
 - El gate Docker/Supabase quedó resuelto; Sprint 2 está habilitado, pero ninguna de sus
   tareas fue iniciada.
+
+### 2026-06-20 - Inicio de Sprint 2
+
+- Sprint 2 iniciado con el catálogo público conectado a `public_catalog_products`.
+- Listado, detalle por slug, búsqueda, categoría, imágenes, promociones, destacado,
+  disponibilidad segura y estados de interfaz implementados.
+- Visitantes no reciben consultas ni contenido de precios; el CTA dirige a `/login`.
+- Permanecen abiertos los ítems amplios del sprint: paginación, navegación jerárquica,
+  SEO completo, Open Graph, sitemap, datos estructurados y cobertura responsive/E2E.
+- Gate del incremento exitoso: lint, typecheck, 10/10 pruebas y build de producción.
+
+### 2026-06-20 - Cierre de Sprint 2
+
+- Paginación server-side, filtros jerárquicos padre/subcategoría y breadcrumbs completos.
+- SEO preparado con metadata Home/Catálogo, metadata dinámica por producto, Open Graph
+  básico y JSON-LD `Product` sin ofertas ni precios.
+- Detalle comercial ampliado con imagen principal, stock, unidad, promoción, destacado y
+  CTA de autenticación para precios.
+- Suite ampliada a 15 pruebas; Playwright evaluado y diferido por costo de infraestructura
+  hasta disponer de Supabase y navegador reproducibles en CI.
+- Lint, typecheck, 15/15 pruebas y build exitosos.
+- Sprint 2 cerrado. Sprint 3 no iniciado; carrito, pedidos, CRM y admin permanecen fuera.

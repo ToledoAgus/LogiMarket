@@ -4,8 +4,8 @@
 > sección "Registro de estado".
 
 **Última actualización:** 2026-06-20  
-**Fase:** Sprint 1 cerrado; Sprint 2 habilitado y no iniciado  
-**Estado general:** Gate Docker/Supabase resuelto; validación local completa  
+**Fase:** Sprint 2 cerrado; Sprint 3 no iniciado
+**Estado general:** Catálogo B2B público navegable, paginado y preparado para SEO
 **Fuente de requisitos:** `PROJECT_BRIEF_LOGIMARKET.md`
 
 ## 1. Alcance confirmado
@@ -264,25 +264,25 @@ NEXT_PUBLIC_SITE_URL
 | Proyecto Next.js | Completado | Next.js 15.5.19, TypeScript estricto, Tailwind, Shadcn, pruebas y CI configurados. |
 | Supabase local y migraciones | Completado | Supabase local validado con `db:reset`, `db:lint` y `db:types` exitosos. |
 | Autenticación y RLS | Base completada | Clientes SSR/browser, middleware, perfiles, roles y RLS implementados; pantallas Auth completas permanecen en el backlog del MVP. |
-| Catálogo / carrito / pedidos | Pendiente | Sprints 2-4. |
+| Catálogo / carrito / pedidos | Sprint 2 completado | Catálogo público cerrado; carrito y pedidos permanecen pendientes en Sprints 3-4. |
 | Administración / CRM / PDF | Pendiente | Sprints 5-7. |
 | Producción | Pendiente | Sprint 8. |
 
 ## 12. Próximo Sprint Recomendado
 
-**Sprint 2 - Catálogo público (habilitado, no iniciado).**
+**Sprint 3 - Precios privados y carrito (no iniciado).**
 
 Alcance exacto:
 
-- Implementar home, listado, detalle, búsqueda, filtros y paginación.
-- Implementar categorías jerárquicas, marcas, imágenes y promociones públicas.
-- Mostrar disponibilidad sin exponer datos sensibles de inventario ni precios.
-- Optimizar imágenes, SEO, Open Graph, sitemap y datos estructurados.
-- Añadir estados de carga, error y vacío, más pruebas responsive y E2E.
+- Resolver la lista y el precio vigente en servidor por cliente y presentación.
+- Mostrar precios únicamente a miembros autenticados y autorizados.
+- Implementar carrito persistido, cantidades mínimas y observaciones.
+- Calcular subtotales y total estimado exclusivamente desde el servidor.
+- Manejar cambios de precio o stock con mensajes recuperables.
+- Probar aislamiento de precios, mínimos, redondeo y persistencia multidispositivo.
 
-**Salida esperada:** el visitante navega el catálogo completo; las acciones de precio y
-compra requieren autenticación. Esta sección solo recomienda y habilita el alcance; no
-registra el inicio de tareas de Sprint 2.
+**Salida esperada:** un cliente autenticado arma un carrito válido con importes
+verificables. Sprint 3 queda recomendado, pero no se inicia mediante este cierre.
 
 ## 13. Registro de estado (append-only)
 
@@ -374,3 +374,37 @@ registra el inicio de tareas de Sprint 2.
 - Cadena de calidad completa validada: lint, typecheck, test y build finalizaron OK.
 - El gate técnico de Docker/Supabase quedó resuelto y deja de bloquear el roadmap.
 - Sprint 2 quedó habilitado, sin iniciar ninguna de sus tareas.
+
+### 2026-06-20 - Inicio de Sprint 2: catálogo público funcional
+
+- Sprint 2 iniciado formalmente con el catálogo público como primer incremento.
+- `/catalogo` consume exclusivamente datos reales de Supabase mediante
+  `public_catalog_products`; no se incorporaron mocks ni fuentes alternativas.
+- Listado limitado por RLS a productos, marcas y categorías activas, con imagen principal,
+  nombre, marca, categoría, descripción, stock seguro, promoción y destacado.
+- Búsqueda por nombre y filtro por categoría implementados en servidor mediante parámetros
+  de URL; grid mobile first de una, dos y cuatro columnas.
+- Estados loading, vacío y error implementados para la ruta de catálogo.
+- `/catalogo/[slug]` muestra el detalle público completo disponible, sin consultar ni
+  renderizar precios, y ofrece acceso a login para verlos.
+- La vista pública sigue excluyendo importes y stock reservado; las políticas RLS no se
+  modificaron ni relajaron.
+- Validación final exitosa: lint, typecheck, 10/10 pruebas y build de producción.
+
+### 2026-06-20 - Cierre de Sprint 2
+
+- Sprint 2 cerrado formalmente como catálogo B2B público navegable y mobile first.
+- Paginación server-side de 12 productos implementada con conteo exacto, URLs persistentes
+  y redirección de páginas fuera de rango.
+- Categorías padre y subcategorías incorporadas con filtrado combinado; la resolución de
+  descendientes ocurre en servidor y valida la relación jerárquica.
+- Metadata específica para Home y Catálogo, metadata dinámica por producto, Open Graph
+  básico y datos estructurados `Product` sin precios implementados.
+- Detalle ampliado con breadcrumbs, ficha comercial, stock, unidad, promociones,
+  destacado y CTA visible de login, sin consultar ni mostrar importes.
+- Cobertura automatizada ampliada a 15 pruebas para respuesta controlada de Supabase,
+  búsqueda, filtros, jerarquía, detalle, metadata y ocultamiento de precios.
+- Playwright evaluado y diferido: requiere navegador, web server y Supabase reproducible
+  en CI; no se agregó complejidad operativa para duplicar la cobertura actual.
+- Gate de cierre exitoso: lint, typecheck, 15/15 pruebas y build de producción.
+- No se inició carrito, pedidos, CRM ni administración. Sprint 3 permanece no iniciado.

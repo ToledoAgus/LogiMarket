@@ -283,3 +283,60 @@ lint, typecheck, test y build, y cerrar formalmente Sprint 1 el 2026-06-20.
 **Consecuencias:** Supabase local queda validado de extremo a extremo y ya no bloquea el
 roadmap. Sprint 2 queda habilitado, aunque no se inicia ninguna de sus tareas mediante
 esta decisión.
+
+### ADR-017 - Catálogo público consultado desde la proyección segura
+
+**Fecha:** 2026-06-20
+**Estado:** Aceptada
+**Reemplaza:** N/A
+
+**Contexto:** Sprint 2 necesita listar y detallar productos reales para visitantes con
+búsqueda, categoría, imágenes, promociones y stock, sin exponer importes ni cantidades
+reservadas y sin duplicar las reglas de actividad en la interfaz.
+
+**Decisión:** Consultar productos desde `public_catalog_products` usando el cliente SSR
+con anon key y enriquecerlos únicamente con `product_images`, `promotion_products` y
+`promotions`, todas bajo sus políticas públicas vigentes. Ejecutar búsqueda por nombre y
+filtro por categoría en Supabase. No consultar `product_prices` desde rutas públicas.
+
+**Consecuencias:** Listado y detalle comparten un contrato tipado, los productos inactivos
+y datos sensibles permanecen fuera de la respuesta, y RLS sigue siendo la frontera de
+autorización. Los precios solo se incorporarán en un flujo autenticado posterior.
+
+### ADR-018 - Paginación y filtros jerárquicos dirigidos por URL
+
+**Fecha:** 2026-06-20
+**Estado:** Aceptada
+**Reemplaza:** N/A
+
+**Contexto:** El catálogo B2B debe navegar volúmenes crecientes, combinar búsqueda con
+categorías padre y subcategorías, conservar estado al compartir una URL y seguir siendo
+renderizable en servidor para accesibilidad y SEO.
+
+**Decisión:** Paginar `public_catalog_products` en servidor en bloques de 12 usando
+`range` y conteo exacto. Representar búsqueda, categoría, subcategoría y página en query
+params. Resolver descendientes de categoría en servidor y rechazar combinaciones
+jerárquicas inconsistentes antes de construir el filtro Supabase.
+
+**Consecuencias:** Las URLs son reproducibles y los clientes no descargan el catálogo
+completo. Cambiar el tamaño de página altera la distribución de URLs paginadas, y una
+página fuera de rango se canoniza mediante redirección a la última disponible.
+
+### ADR-019 - Diferir Playwright hasta disponer de un entorno E2E reproducible
+
+**Fecha:** 2026-06-20
+**Estado:** Aceptada
+**Reemplaza:** N/A
+
+**Contexto:** El flujo mínimo de catálogo puede cubrirse con Playwright, pero el proyecto
+todavía no incluye la dependencia, navegadores, web server de prueba ni arranque de
+Supabase local dentro de CI. Incorporarlo ahora duplicaría cobertura sin validar un
+entorno equivalente al real.
+
+**Decisión:** Cerrar Sprint 2 con pruebas Vitest/Testing Library sobre respuestas
+controladas en el límite Supabase y contratos RLS. Incorporar Playwright cuando CI pueda
+levantar aplicación, navegador y Supabase de manera reproducible.
+
+**Consecuencias:** Búsqueda, filtros, detalle, metadata y ocultamiento de precios quedan
+cubiertos en 15 pruebas rápidas, pero la navegación real entre páginas conserva riesgo
+residual hasta sumar el smoke E2E. Este diferimiento no habilita mocks en runtime.
