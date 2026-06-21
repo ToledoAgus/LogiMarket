@@ -1,7 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BadgePercent, PackageCheck, Store } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = {
+  description: "Explorá el catálogo mayorista de LogiMarket y consultá disponibilidad para abastecer tu comercio.",
+  openGraph: {
+    description: "Productos mayoristas y disponibilidad para tu comercio.",
+    title: "LogiMarket - Mayorista online",
+    type: "website",
+  },
+  title: "Inicio",
+};
 
 const benefits = [
   {

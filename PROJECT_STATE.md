@@ -3,10 +3,11 @@
 > Documento vivo. Actualizar en cada cambio relevante sin borrar el historial de la
 > sección "Registro de estado".
 
-**Última actualización:** 2026-06-20  
-**Fase:** Sprint 1 cerrado; Sprint 2 habilitado y no iniciado  
-**Estado general:** Gate Docker/Supabase resuelto; validación local completa  
+**Última actualización:** 2026-06-21  
+**Fase:** Sprint 3 cerrado y validado en local; validación del preview remoto bloqueada (infra)
+**Estado general:** Catálogo B2B con auth, precios privados, carrito local, checkout y WhatsApp
 **Fuente de requisitos:** `PROJECT_BRIEF_LOGIMARKET.md`
+**Próximo objetivo:** ver sección `NEXT_SESSION_START` al final del documento
 
 ## 1. Alcance confirmado
 
@@ -255,6 +256,12 @@ NEXT_PUBLIC_SITE_URL
 | Datos personales y analítica | Alto | Minimización, retención, consentimiento y política de privacidad antes de tracking. |
 | Next.js 15 frente a versiones nuevas | Medio | Fijar versiones compatibles y actualizar deliberadamente tras pruebas. |
 | Configuración remota de Supabase/Vercel pendiente | Medio | Desarrollo local reproducible y checklist de secretos/entornos. |
+| Registrante auto-activado como cliente (sin aprobación) | Alto | Decisión MVP (ADR-020); incorporar flujo de aprobación pendiente→activo en el backoffice (Sprint 5). |
+| Confirmación de email desactivada en local | Medio | Solo entorno local para validar el flujo; producción debe reactivar `enable_confirmations`. |
+| Reservas de stock no se liberan al cancelar | Medio | Completar la máquina de estados y la liberación de reservas en Sprint 4. |
+| `NEXT_PUBLIC_SUPABASE_URL` remota mal formada (`/rest/v1/`) | Alto | Corregir a la URL base del proyecto; rompe catálogo y login en Vercel. |
+| Migraciones/seed del Supabase remoto sin confirmar | Alto | `supabase db push` y carga de datos reales antes de mergear/desplegar. |
+| Deployment Protection impide validar el preview | Medio | Ajustar protección o usar bypass para revalidar el flujo en Vercel. |
 
 ## 11. Estado de implementación
 
@@ -263,26 +270,26 @@ NEXT_PUBLIC_SITE_URL
 | Requisitos y arquitectura | Completado | Este documento, roadmap y registro de decisiones. |
 | Proyecto Next.js | Completado | Next.js 15.5.19, TypeScript estricto, Tailwind, Shadcn, pruebas y CI configurados. |
 | Supabase local y migraciones | Completado | Supabase local validado con `db:reset`, `db:lint` y `db:types` exitosos. |
-| Autenticación y RLS | Base completada | Clientes SSR/browser, middleware, perfiles, roles y RLS implementados; pantallas Auth completas permanecen en el backlog del MVP. |
-| Catálogo / carrito / pedidos | Pendiente | Sprints 2-4. |
+| Autenticación y RLS | Completado (MVP) | Login/registro/logout con Supabase Auth; alta de cliente vía RPC `register_customer`; RLS y guardas de servidor activas. Aprobación comercial de clientes y recuperación de contraseña pendientes. |
+| Catálogo / carrito / pedidos | Sprint 3 completado | Precios privados, carrito local, checkout transaccional (`place_order`) y WhatsApp implementados. Historial/detalle de pedidos del cliente pendiente. |
 | Administración / CRM / PDF | Pendiente | Sprints 5-7. |
 | Producción | Pendiente | Sprint 8. |
 
 ## 12. Próximo Sprint Recomendado
 
-**Sprint 2 - Catálogo público (habilitado, no iniciado).**
+**Sprint 4 - Pedidos del cliente y robustez (no iniciado).**
 
-Alcance exacto:
+Alcance recomendado:
 
-- Implementar home, listado, detalle, búsqueda, filtros y paginación.
-- Implementar categorías jerárquicas, marcas, imágenes y promociones públicas.
-- Mostrar disponibilidad sin exponer datos sensibles de inventario ni precios.
-- Optimizar imágenes, SEO, Open Graph, sitemap y datos estructurados.
-- Añadir estados de carga, error y vacío, más pruebas responsive y E2E.
+- Implementar máquina de estados del pedido con transiciones válidas y liberación de
+  reservas de stock al cancelar.
+- Crear historial y detalle de pedidos del cliente (`/pedidos`).
+- Añadir recuperación de contraseña y reenvío de confirmación de email.
+- Incorporar idempotencia y rate limiting en checkout y endpoints sensibles.
+- Sumar smoke E2E del flujo login → carrito → checkout → WhatsApp.
 
-**Salida esperada:** el visitante navega el catálogo completo; las acciones de precio y
-compra requieren autenticación. Esta sección solo recomienda y habilita el alcance; no
-registra el inicio de tareas de Sprint 2.
+**Salida esperada:** el cliente gestiona y consulta sus pedidos, y el flujo comercial es
+robusto frente a concurrencia y reintentos.
 
 ## 13. Registro de estado (append-only)
 
@@ -374,3 +381,210 @@ registra el inicio de tareas de Sprint 2.
 - Cadena de calidad completa validada: lint, typecheck, test y build finalizaron OK.
 - El gate técnico de Docker/Supabase quedó resuelto y deja de bloquear el roadmap.
 - Sprint 2 quedó habilitado, sin iniciar ninguna de sus tareas.
+
+### 2026-06-20 - Inicio de Sprint 2: catálogo público funcional
+
+- Sprint 2 iniciado formalmente con el catálogo público como primer incremento.
+- `/catalogo` consume exclusivamente datos reales de Supabase mediante
+  `public_catalog_products`; no se incorporaron mocks ni fuentes alternativas.
+- Listado limitado por RLS a productos, marcas y categorías activas, con imagen principal,
+  nombre, marca, categoría, descripción, stock seguro, promoción y destacado.
+- Búsqueda por nombre y filtro por categoría implementados en servidor mediante parámetros
+  de URL; grid mobile first de una, dos y cuatro columnas.
+- Estados loading, vacío y error implementados para la ruta de catálogo.
+- `/catalogo/[slug]` muestra el detalle público completo disponible, sin consultar ni
+  renderizar precios, y ofrece acceso a login para verlos.
+- La vista pública sigue excluyendo importes y stock reservado; las políticas RLS no se
+  modificaron ni relajaron.
+- Validación final exitosa: lint, typecheck, 10/10 pruebas y build de producción.
+
+### 2026-06-20 - Cierre de Sprint 2
+
+- Sprint 2 cerrado formalmente como catálogo B2B público navegable y mobile first.
+- Paginación server-side de 12 productos implementada con conteo exacto, URLs persistentes
+  y redirección de páginas fuera de rango.
+- Categorías padre y subcategorías incorporadas con filtrado combinado; la resolución de
+  descendientes ocurre en servidor y valida la relación jerárquica.
+- Metadata específica para Home y Catálogo, metadata dinámica por producto, Open Graph
+  básico y datos estructurados `Product` sin precios implementados.
+- Detalle ampliado con breadcrumbs, ficha comercial, stock, unidad, promociones,
+  destacado y CTA visible de login, sin consultar ni mostrar importes.
+- Cobertura automatizada ampliada a 15 pruebas para respuesta controlada de Supabase,
+  búsqueda, filtros, jerarquía, detalle, metadata y ocultamiento de precios.
+- Playwright evaluado y diferido: requiere navegador, web server y Supabase reproducible
+  en CI; no se agregó complejidad operativa para duplicar la cobertura actual.
+- Gate de cierre exitoso: lint, typecheck, 15/15 pruebas y build de producción.
+- No se inició carrito, pedidos, CRM ni administración. Sprint 3 permanece no iniciado.
+
+### 2026-06-20 - Implementación y cierre de Sprint 3 (carrito + pedidos + WhatsApp)
+
+- Revisión previa completa: brief, estado, roadmap y decisiones contrastados con el código.
+  Se detectó que toda la implementación de Sprint 2 estaba sin commitear y que la
+  autenticación de Sprint 1 no existía; ambos puntos se informaron antes de comenzar.
+- Baseline de Sprint 2 commiteada en la rama `feat/sprint-3-cart-orders` antes de iniciar.
+- Autenticación email/contraseña con Server Actions (login, registro, logout). Alta de
+  cliente mediante RPC `register_customer` (`security definer`, idempotente, auto-activa en
+  el MVP). Confirmación de email desactivada solo en local (ADR-020).
+- Precios resueltos en servidor desde `product_prices` y mostrados únicamente a miembros
+  activos; visitantes no reciben importes (verificado en runtime: el detalle público no
+  filtra precios).
+- Carrito con persistencia local (`localStorage`), presentaciones, cantidades mínimas, badge
+  en header, página `/carrito` y subtotal estimado (ADR-021).
+- Checkout `/checkout` con validación Zod y RPC transaccional `place_order`: resuelve precios,
+  valida mínimos y stock con bloqueo de fila, reserva inventario con movimiento, genera número
+  y snapshots, y devuelve total. Enlace `wa.me` construido en servidor tras persistir (ADR-022).
+- Migración aditiva `202606200002_cart_orders.sql` (no se modificó la inicial) y seed con un
+  cliente de prueba pre-confirmado para validación de extremo a extremo.
+- Flujo `place_order` validado a nivel SQL como cliente autenticado: pedido, snapshots y
+  reserva correctos; mínimos, stock e idempotencia de `register_customer` verificados.
+- Suite ampliada a 27 pruebas (carrito, precios por sesión, WhatsApp, checkout, dinero).
+- Gate de cierre exitoso, sin omisiones: `db:reset`, `db:lint`, `db:types`, lint, typecheck,
+  27/27 pruebas y build de producción.
+- Riesgos abiertos: aprobación comercial de clientes diferida, confirmación de email local
+  desactivada y reservas de stock sin liberación automática (ver sección 10).
+
+### 2026-06-20 - Validación del preview de Vercel (PR #1) - BLOQUEADA
+
+- Objetivo: confirmar que el preview de Vercel use variables correctas y datos reales antes
+  de mergear `feat/sprint-3-cart-orders`.
+- Variables en Vercel (`logi-market`, Preview + Production): `NEXT_PUBLIC_SUPABASE_URL` y
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` presentes. La anon key está marcada *Sensitive* (no legible
+  por CLI), y **no existe `SUPABASE_SERVICE_ROLE_KEY`**: no hay claves de servicio expuestas
+  al cliente. Falta `NEXT_PUBLIC_SITE_URL` (usa el default `localhost:3000`).
+- **Bloqueante 1 (configuración):** `NEXT_PUBLIC_SUPABASE_URL` está como
+  `https://deizsoojahyjfowyeuda.supabase.co/rest/v1/`. `@supabase/ssr` agrega las rutas
+  `/rest/v1`, `/auth/v1`, etc., por lo que el sufijo produce endpoints inválidos
+  (`/rest/v1//rest/v1`, `/rest/v1//auth/v1`) y rompe catálogo y login. Debe ser la URL base
+  del proyecto, sin path.
+- **Bloqueante 2 (acceso):** el deployment de preview responde 401 (Deployment Protection de
+  Vercel), por lo que no se pudo abrir la app ni validar el flujo (home, catálogo, login,
+  carrito, checkout) de forma anónima.
+- **Migraciones remotas: NO CONFIRMADAS.** El proyecto Supabase remoto existe y responde
+  (PostgREST devuelve 401 por falta de apikey), pero no se pudo verificar el esquema ni el
+  seed porque la anon key no es legible y no hay credenciales de base de datos disponibles.
+- **Decisión: NO mergear.** Por la regla "si faltan migraciones o seed en Supabase remoto, no
+  mergear" y al no poder confirmarlas, el merge queda bloqueado hasta resolver los puntos
+  anteriores. El flujo end-to-end sí está validado contra Supabase local.
+- Remediación propuesta: (1) corregir `NEXT_PUBLIC_SUPABASE_URL` a la URL base sin `/rest/v1/`;
+  (2) definir `NEXT_PUBLIC_SITE_URL`; (3) `supabase link` + `supabase db push` al proyecto
+  remoto y cargar datos reales (sin el usuario de prueba del seed en producción); (4) ajustar
+  Deployment Protection o usar un bypass para revalidar el flujo en el preview.
+
+### 2026-06-21 - Remediación Etapa 1 (Vercel) aplicada; Etapa 2 (DB) congelada
+
+- Hallazgo de seguridad confirmado: el proyecto Supabase `deizsoojahyjfowyeuda` y las variables
+  `NEXT_PUBLIC_*` son **compartidos por Preview y Production**. Por lo tanto `supabase db push`
+  afectaría producción. Se escaló y, por decisión del usuario, **Etapa 2 (DB) queda congelada**
+  y la validación funcional del flujo la realiza el usuario manualmente.
+- **Etapa 1 (solo Vercel, sin tocar Production):**
+  - `NEXT_PUBLIC_SUPABASE_URL` corregida y **scopeada al preview de la rama**
+    `feat/sprint-3-cart-orders` → `https://deizsoojahyjfowyeuda.supabase.co` (sin `/rest/v1/`).
+  - `NEXT_PUBLIC_SITE_URL` definida para el mismo preview de rama → alias estable del preview.
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY` se mantiene (Sensitive, no legible). **No** se configuró
+    `SUPABASE_SERVICE_ROLE_KEY` en ningún entorno.
+  - Nota de transparencia: al reconfigurar, `vercel env rm ... preview` eliminó la variable de
+    URL en ambos entornos; se **restauró Production de inmediato a su valor original**
+    (`.../rest/v1/`), dejándolo sin cambios respecto al estado previo.
+- Pendiente para validación funcional completa en preview: aplicar migraciones/seed al Supabase
+  remoto (Etapa 2, congelada) y resolver el acceso (Deployment Protection 401). Hasta entonces el
+  preview corregido alcanza Supabase, pero el catálogo/login no tendrán datos.
+
+### 2026-06-21 - Cierre de sesión
+
+**Estado real:** Sprint 3 implementado, validado de extremo a extremo contra Supabase local y
+mergeable en GitHub. La validación del preview en Vercel está bloqueada por infraestructura, no
+por código. Decisión tomada: usar un Supabase dedicado al preview (ADR-023).
+
+**Sprints:**
+
+- Sprint 0: completado.
+- Sprint 1: completado (Auth funcional incorporada en Sprint 3).
+- Sprint 2: completado (catálogo público).
+- Sprint 3: completado a nivel código y validado en local; pendiente la validación en el
+  preview remoto. Absorbió el alcance de checkout/pedidos/WhatsApp del Sprint 4.
+
+**Validaciones al cierre (todas OK):** `db:reset`, `db:lint` (sin errores de esquema),
+`db:types` (sin diff), `lint`, `typecheck`, `test` (27/27), `build`.
+
+**Git:** rama `feat/sprint-3-cart-orders`; último commit de código `0f93654` (Sprint 3) + fix
+`0a505bf`; HEAD de docs al cierre. Working tree limpio. PR #1 OPEN, MERGEABLE, sin merge.
+
+**Infraestructura:**
+
+- *Supabase local:* operativo. Migraciones `…0001_initial_schema` y `…0002_cart_orders`
+  aplicadas; seed validado (incluye cliente de prueba pre-confirmado); RLS validada
+  (catálogo público sin precios, precios solo a miembros, pedidos vía RPC `place_order`).
+- *Supabase remoto (`deizsoojahyjfowyeuda`):* vivo, pero **compartido por Preview y Production**.
+  Migraciones/seed **no confirmadas** y **no aplicadas** (db push congelado). No se debe tocar.
+- *Vercel Preview (rama):* `NEXT_PUBLIC_SUPABASE_URL` corregida (sin `/rest/v1/`) y
+  `NEXT_PUBLIC_SITE_URL` definidas, scopeadas a la rama; build `8nw2hqzhm` Ready; acceso 401
+  (Deployment Protection). *Vercel Production:* intacto, conserva URL con `/rest/v1/` (pendiente).
+  Sin `service_role` en ningún entorno.
+
+**Bloqueos actuales:**
+
+1. Preview y Production comparten el mismo Supabase y variables.
+2. No se realizó `db push` remoto (congelado por el bloqueo 1).
+3. No existe aún un proyecto Supabase Preview dedicado.
+4. Deployment Protection (401) impide validar el preview de forma anónima.
+5. PR #1 permanece sin mergear.
+
+**Riesgos abiertos:** ver sección 10 (URL de Production mal formada, migraciones remotas sin
+confirmar, aprobación de clientes diferida, confirmación de email local desactivada, reservas
+de stock sin liberación, cliente auto-activado).
+
+**Próximos pasos recomendados:** crear/configurar el Supabase Preview independiente, apuntar las
+variables de Preview de la rama, `db push` + seed comercial mínimo, validar el flujo completo y
+dejar el PR listo para revisión (ver `NEXT_SESSION_START`).
+
+---
+
+# NEXT_SESSION_START
+
+**Objetivo de la próxima sesión:** crear y configurar un **proyecto Supabase Preview
+independiente** para validar el PR #1 sin riesgo para producción.
+
+### 1. Leer primero (en este orden)
+1. `PROJECT_STATE.md` — esta entrada de cierre y secciones 10-12.
+2. `ROADMAP.md` — entradas del 2026-06-20/21 (cierre de Sprint 3 y remediación).
+3. `DECISION_LOG.md` — ADR-020 a ADR-023.
+
+### 2. Qué NO debe tocarse
+- El proyecto Supabase `deizsoojahyjfowyeuda` (no `db push`, no seed, no esquema).
+- Las variables ni los deployments de **Production** en Vercel.
+- La lógica funcional del código (Sprint 3 ya validado); solo correcciones de preview si hicieran falta.
+- No mergear el PR #1 sin confirmación. No iniciar Sprint 4.
+- No exponer `service_role`. No borrar historial de documentación.
+
+### 3. Qué verificar antes de continuar
+- Supabase local levantado (`npm run db:start` si hace falta) y gate verde
+  (`db:reset`/`db:lint`/`db:types`/`lint`/`typecheck`/`test`/`build`).
+- Rama `feat/sprint-3-cart-orders` con working tree limpio y PR #1 aún OPEN.
+- Recibir del usuario los datos del **nuevo** proyecto Supabase Preview: `project-ref`, URL base
+  (sin `/rest/v1/`), `anon key`, DB password y access token (o `supabase login`). **No** pedir/usar `service_role`.
+
+### 4. Decisiones ya tomadas
+- Sprint 3 combina precios + carrito + checkout + pedidos + WhatsApp (más Auth base).
+- Opción elegida: Supabase **dedicado** al preview (ADR-023); no usar el compartido.
+- Validación del flujo en preview vía dev local apuntado al nuevo Supabase (el preview de Vercel
+  está protegido con 401); el usuario también confirma visualmente.
+
+### 5. Próximo objetivo (pasos)
+1. Vercel: apuntar `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Preview, rama)
+   al nuevo proyecto.
+2. `supabase link --project-ref <nuevo>` + `supabase db push`.
+3. Cargar seed comercial mínimo (marcas, categorías, productos, precios), sin usuario de prueba.
+4. Validar: home, catálogo con productos, detalle sin precios para visitante, registro/login,
+   precios para cliente, carrito, checkout, pedido en Supabase, WhatsApp.
+5. Documentar en `PROJECT_STATE.md` y `ROADMAP.md`; dejar el PR **listo para merge, sin mergear**.
+
+---
+
+# RESTRICCIONES PERMANENTES
+
+- No mergear el PR #1 sin confirmación explícita.
+- No iniciar Sprint 4.
+- No ejecutar `db push` (ni seed) sobre `deizsoojahyjfowyeuda`.
+- No modificar Production (Vercel ni su Supabase).
+- No exponer ni configurar `service_role` en Vercel ni en el cliente.
+- No eliminar documentación histórica (todas las entradas son append-only).

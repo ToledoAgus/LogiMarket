@@ -1076,6 +1076,7 @@ export type Database = {
       }
     }
     Functions: {
+      generate_order_number: { Args: { p_org: string }; Returns: string }
       get_current_user_role:
         | { Args: never; Returns: Database["public"]["Enums"]["member_role"] }
         | {
@@ -1092,6 +1093,27 @@ export type Database = {
       is_active_member: {
         Args: { target_organization_id: string }
         Returns: boolean
+      }
+      place_order: {
+        Args: {
+          p_business_name: string
+          p_delivery_address: string
+          p_email: string
+          p_first_name: string
+          p_items: Json
+          p_last_name: string
+          p_notes: string
+          p_phone: string
+        }
+        Returns: {
+          order_id: string
+          order_number: string
+          total_cents: number
+        }[]
+      }
+      register_customer: {
+        Args: { p_business_name: string; p_owner_name: string; p_phone: string }
+        Returns: string
       }
     }
     Enums: {

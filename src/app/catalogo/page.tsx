@@ -1,37 +1,63 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { LockKeyhole, Search } from "lucide-react";
+import { redirect } from "next/navigation";
+import { CatalogContent } from "@/features/catalog/catalog-content";
+import { getCatalog } from "@/features/catalog/queries";
 
-import { Button } from "@/components/ui/button";
+export const metadata: Metadata = {
+  description: "Explorá productos mayoristas por categoría, marca y promoción, con disponibilidad actualizada.",
+  openGraph: {
+    description: "Productos mayoristas con disponibilidad actualizada, sin precios públicos.",
+    title: "Catálogo mayorista",
+    type: "website",
+  },
+  title: "Catálogo",
+};
 
-export const metadata: Metadata = { title: "Catálogo" };
+type CatalogPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
-export default function CatalogPage() {
+function firstValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function validUuid(value: string | undefined) {
+  return value && uuidPattern.test(value) ? value : "";
+}
+
+export default async function CatalogPage({ searchParams }: CatalogPageProps) {
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const search = firstValue(resolvedSearchParams.q)?.trim() ?? "";
+  const parentCategoryId = validUuid(firstValue(resolvedSearchParams.category));
+  const subcategoryId = validUuid(firstValue(resolvedSearchParams.subcategory));
+  const pageCandidate = Number.parseInt(firstValue(resolvedSearchParams.page) ?? "1", 10);
+  const page = Number.isSafeInteger(pageCandidate) && pageCandidate > 0 ? pageCandidate : 1;
+  const { categories, pagination, products } = await getCatalog({
+    page,
+    parentCategoryId,
+    search,
+    subcategoryId,
+  });
+
+  if (page > pagination.totalPages) {
+    const params = new URLSearchParams();
+    if (search) params.set("q", search);
+    if (parentCategoryId) params.set("category", parentCategoryId);
+    if (subcategoryId) params.set("subcategory", subcategoryId);
+    if (pagination.totalPages > 1) params.set("page", String(pagination.totalPages));
+    redirect(params.size ? `/catalogo?${params.toString()}` : "/catalogo");
+  }
+
   return (
-    <div className="container py-10 sm:py-14">
-      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-sm font-bold uppercase tracking-widest text-primary">Productos</p>
-          <h1 className="mt-2 text-3xl font-black sm:text-4xl">Catálogo mayorista</h1>
-          <p className="mt-3 max-w-2xl text-muted-foreground">
-            La carga del catálogo se habilitará al conectar el esquema seguro de Supabase.
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <Link href="/login">
-            <LockKeyhole aria-hidden="true" className="size-4" /> Ver precios
-          </Link>
-        </Button>
-      </div>
-
-      <div className="mt-10 rounded-2xl border border-dashed border-border bg-card p-8 text-center sm:p-14">
-        <Search aria-hidden="true" className="mx-auto size-10 text-primary" />
-        <h2 className="mt-4 text-xl font-bold">Catálogo en preparación</h2>
-        <p className="mx-auto mt-2 max-w-md text-muted-foreground">
-          No se muestran productos simulados. Esta pantalla utilizará únicamente datos
-          vigentes de Supabase.
-        </p>
-      </div>
-    </div>
+    <CatalogContent
+      categories={categories}
+      pagination={pagination}
+      parentCategoryId={parentCategoryId}
+      products={products}
+      search={search}
+      subcategoryId={subcategoryId}
+    />
   );
 }

@@ -307,4 +307,69 @@ on conflict (id) do update set
   units_included = excluded.units_included,
   is_active = excluded.is_active;
 
+-- Cliente de prueba pre-confirmado para validar el flujo autenticado local
+-- (precios, carrito y checkout). Solo para desarrollo: credenciales no secretas.
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, created_at, updated_at,
+  raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
+  confirmation_token, recovery_token, email_change,
+  email_change_token_new, email_change_token_current, reauthentication_token,
+  phone_change
+) values (
+  '00000000-0000-0000-0000-000000000000',
+  '00000000-0000-4000-8000-000000000701',
+  'authenticated',
+  'authenticated',
+  'cliente@logimarket.test',
+  extensions.crypt('logimarket123', extensions.gen_salt('bf')),
+  now(), now(), now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{"first_name":"Cliente","last_name":"Demo"}'::jsonb,
+  false, false,
+  '', '', '', '', '', '', ''
+)
+on conflict (id) do nothing;
+
+insert into auth.identities (
+  id, user_id, provider_id, provider, identity_data,
+  last_sign_in_at, created_at, updated_at
+) values (
+  gen_random_uuid(),
+  '00000000-0000-4000-8000-000000000701',
+  '00000000-0000-4000-8000-000000000701',
+  'email',
+  '{"sub":"00000000-0000-4000-8000-000000000701","email":"cliente@logimarket.test","email_verified":true}'::jsonb,
+  now(), now(), now()
+)
+on conflict do nothing;
+
+insert into public.organization_members (
+  id, organization_id, user_id, role, status
+) values (
+  '00000000-0000-4000-8000-000000000801',
+  '00000000-0000-4000-8000-000000000001',
+  '00000000-0000-4000-8000-000000000701',
+  'customer',
+  'active'
+)
+on conflict (organization_id, user_id) do update set status = excluded.status;
+
+insert into public.customers (
+  id, organization_id, profile_id, business_name, owner_name,
+  phone, email, address, zone, status
+) values (
+  '00000000-0000-4000-8000-000000000901',
+  '00000000-0000-4000-8000-000000000001',
+  '00000000-0000-4000-8000-000000000701',
+  'Kiosco Demo',
+  'Cliente Demo',
+  '+5491100000000',
+  'cliente@logimarket.test',
+  'Av. Siempre Viva 123',
+  'Centro',
+  'active'
+)
+on conflict (id) do update set status = excluded.status;
+
 commit;

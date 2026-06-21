@@ -39,4 +39,6 @@ enable_signup = true
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = true
+# Local/dev: el registro crea sesión inmediata para validar el flujo de compra
+# de extremo a extremo. Producción debe reactivar la confirmación por email.
+enable_confirmations = false

@@ -4,8 +4,8 @@
 > son de actualización; la duración se expresa en sprints de dos semanas y se ajustará
 > con la velocidad real del equipo.
 
-**Última actualización:** 2026-06-20  
-**Sprint activo:** Ninguno - Sprint 2 habilitado, todavía no iniciado
+**Última actualización:** 2026-06-21  
+**Sprint activo:** Sprint 3 cerrado y validado en local; preview remoto pendiente; Sprint 4 sin iniciar
 
 ## Criterios de prioridad
 
@@ -58,43 +58,67 @@ pero ya no bloquean el inicio futuro de Sprint 2.
 
 **Salida:** un usuario puede autenticarse y solo acceder a datos permitidos de su tenant.
 
-## Sprint 2 - Catálogo público (Habilitado, no iniciado)
+## Sprint 2 - Catálogo público (Completado: 2026-06-20)
 
 **Objetivo:** catálogo real, rápido y accesible sin exponer precios.
 
-- [ ] Implementar home, listado, detalle, búsqueda, filtros y paginación.
-- [ ] Implementar categorías jerárquicas, marcas, imágenes y promociones públicas.
-- [ ] Mostrar disponibilidad sin filtrar datos sensibles de inventario.
-- [ ] Optimizar imágenes, SEO, Open Graph, sitemap y datos estructurados.
-- [ ] Añadir estados de carga/error/vacío y pruebas responsive/E2E.
+- [x] Implementar home, listado, detalle, búsqueda, filtros y paginación.
+- [x] Implementar categorías jerárquicas, marcas, imágenes y promociones públicas.
+- [x] Mostrar disponibilidad sin filtrar datos sensibles de inventario.
+- [x] Optimizar imágenes, metadata, Open Graph básico y datos estructurados de producto.
+- [x] Añadir estados de carga/error/vacío y pruebas automatizadas de UI y contratos.
+
+**Diferido deliberadamente:** sitemap completo y Playwright E2E se incorporarán cuando
+exista un entorno CI de Supabase reproducible; no bloquean el catálogo B2B navegable.
 
 **Salida:** visitante navega el catálogo completo; precio y compra disparan autenticación.
 
-## Sprint 3 - Precios privados y carrito
+**Avance del primer incremento:**
 
-**Objetivo:** experiencia de compra autenticada con cálculos confiables.
+- [x] Conectar listado y detalle con datos reales de Supabase, sin mocks.
+- [x] Mostrar productos activos, imagen principal, marca, categoría, descripción y stock.
+- [x] Mostrar badges de promoción y destacado.
+- [x] Implementar grid mobile first de 1/2/4 columnas.
+- [x] Implementar búsqueda por nombre y filtro por categoría.
+- [x] Implementar estados loading, vacío y error.
+- [x] Crear `/catalogo/[slug]` con detalle y CTA de inicio de sesión.
+- [x] Mantener precios fuera de la consulta pública y conservar RLS vigente.
 
-- [ ] Resolver lista y precio vigente en servidor por cliente/presentación.
-- [ ] Mostrar precios solo a miembros autorizados.
-- [ ] Implementar carrito persistido, cantidades mínimas y observaciones.
-- [ ] Calcular subtotales y total estimado exclusivamente desde datos del servidor.
-- [ ] Manejar cambios de precio/stock y concurrencia con mensajes recuperables.
-- [ ] Probar fuga de precios, mínimos, redondeo y varios dispositivos.
+## Sprint 3 - Carrito, pedidos y WhatsApp (Completado: 2026-06-20)
 
-**Salida:** cliente autenticado arma un carrito válido con importes verificables.
+**Objetivo:** transformar el catálogo navegable en transaccional de extremo a extremo.
 
-## Sprint 4 - Checkout, pedidos y WhatsApp
+El alcance ejecutado combinó el Sprint 3 original (precios privados y carrito) con el flujo
+de checkout/pedidos/WhatsApp del Sprint 4, más la base de Auth diferida de Sprint 1.
 
-**Objetivo:** completar el primer flujo comercial de extremo a extremo.
+- [x] Implementar autenticación email/contraseña: login, registro y logout (Server Actions).
+- [x] Resolver lista y precio vigente en servidor por presentación.
+- [x] Mostrar precios solo a miembros activos; visitantes nunca reciben importes.
+- [x] Implementar carrito con persistencia local, cantidades mínimas y presentaciones.
+- [x] Calcular subtotales y total estimado; el total final se recalcula en servidor.
+- [x] Implementar checkout con datos de contacto/dirección y validación Zod.
+- [x] Crear pedido, items snapshot y reserva de stock en transacción (`place_order`).
+- [x] Generar número de pedido e historial de estado inicial.
+- [x] Generar mensaje WhatsApp al número de la organización tras persistir el pedido.
+- [x] Validar mínimos, stock y aislamiento de precios (pruebas SQL y de componentes).
 
-- [ ] Implementar checkout con datos de contacto/dirección y validación Zod.
-- [ ] Crear pedido, items snapshot y reserva/descuento de stock en transacción.
-- [ ] Implementar número de pedido y máquina de estados con historial.
+**Diferido a sprints posteriores:** liberación de reservas al cancelar, máquina de estados
+completa, historial/detalle de pedidos del cliente, idempotencia/rate limiting y E2E.
+
+**Salida:** un cliente autenticado arma un carrito válido, confirma un pedido persistido con
+importes verificables y lo comparte por WhatsApp.
+
+## Sprint 4 - Pedidos del cliente y robustez (pendiente)
+
+**Objetivo:** completar la operación del pedido más allá del primer flujo feliz.
+
+- [x] Checkout con validación Zod y creación transaccional de pedido (adelantado en Sprint 3).
+- [x] Generar mensaje WhatsApp después de persistir el pedido (adelantado en Sprint 3).
+- [ ] Máquina de estados de pedido con transiciones válidas y liberación de reservas.
 - [ ] Crear historial y detalle de pedidos del cliente.
-- [ ] Generar mensaje WhatsApp al `+54 9 11 5146-1419` después de persistir el pedido.
 - [ ] Añadir idempotencia, rate limiting y pruebas de concurrencia/E2E.
 
-**Salida:** pedido real persistido, auditable y compartible por WhatsApp.
+**Salida:** pedido real persistido, auditable, gestionable y compartible por WhatsApp.
 
 ## Sprint 5 - Backoffice operativo
 
@@ -219,3 +243,76 @@ hasta completar todos los ítems pendientes de este gate.
 - Sprint 1 quedó completado y cerrado el 2026-06-20.
 - El gate Docker/Supabase quedó resuelto; Sprint 2 está habilitado, pero ninguna de sus
   tareas fue iniciada.
+
+### 2026-06-20 - Inicio de Sprint 2
+
+- Sprint 2 iniciado con el catálogo público conectado a `public_catalog_products`.
+- Listado, detalle por slug, búsqueda, categoría, imágenes, promociones, destacado,
+  disponibilidad segura y estados de interfaz implementados.
+- Visitantes no reciben consultas ni contenido de precios; el CTA dirige a `/login`.
+- Permanecen abiertos los ítems amplios del sprint: paginación, navegación jerárquica,
+  SEO completo, Open Graph, sitemap, datos estructurados y cobertura responsive/E2E.
+- Gate del incremento exitoso: lint, typecheck, 10/10 pruebas y build de producción.
+
+### 2026-06-20 - Cierre de Sprint 2
+
+- Paginación server-side, filtros jerárquicos padre/subcategoría y breadcrumbs completos.
+- SEO preparado con metadata Home/Catálogo, metadata dinámica por producto, Open Graph
+  básico y JSON-LD `Product` sin ofertas ni precios.
+- Detalle comercial ampliado con imagen principal, stock, unidad, promoción, destacado y
+  CTA de autenticación para precios.
+- Suite ampliada a 15 pruebas; Playwright evaluado y diferido por costo de infraestructura
+  hasta disponer de Supabase y navegador reproducibles en CI.
+- Lint, typecheck, 15/15 pruebas y build exitosos.
+- Sprint 2 cerrado. Sprint 3 no iniciado; carrito, pedidos, CRM y admin permanecen fuera.
+
+### 2026-06-20 - Cierre de Sprint 3 (carrito + pedidos + WhatsApp)
+
+- Baseline de Sprint 2 commiteada antes de iniciar (estaba sin commit en el working tree).
+- Auth email/contraseña: login, registro y logout con Server Actions; alta de cliente
+  idempotente vía RPC `register_customer` (ADR-020). Confirmación de email desactivada solo
+  en local para validar el flujo completo; producción debe reactivarla.
+- Precios resueltos en servidor y mostrados solo a miembros activos; el detalle de producto
+  ofrece carrito a clientes y CTA de login a visitantes, sin filtrar importes (verificado en
+  runtime y por pruebas).
+- Carrito con persistencia local (`localStorage`), presentaciones, cantidades mínimas,
+  badge en el header y página `/carrito` (ADR-021).
+- Checkout `/checkout` con validación Zod y RPC transaccional `place_order`: resuelve precios,
+  valida mínimos y stock con bloqueo de fila, reserva inventario, genera número y snapshots
+  (ADR-022). Mensaje WhatsApp construido en servidor tras persistir el pedido.
+- Migración aditiva `202606200002_cart_orders.sql` (no se tocó la inicial) y seed con cliente
+  de prueba pre-confirmado para validación local.
+- Suite ampliada a 27 pruebas (carrito, precios por sesión, WhatsApp, checkout). Validado el
+  flujo `place_order` a nivel SQL como cliente autenticado.
+- Gate completo exitoso: `db:reset`, `db:lint`, `db:types`, lint, typecheck, 27/27 y build.
+
+### 2026-06-20 - Validación del preview de Vercel (PR #1): bloqueada, sin merge
+
+- Variables en Vercel correctas en presencia (URL + anon, Preview + Production); anon marcada
+  *Sensitive* y sin `service_role` expuesta. Falta `NEXT_PUBLIC_SITE_URL`.
+- Bloqueante: `NEXT_PUBLIC_SUPABASE_URL` termina en `/rest/v1/` y rompe los endpoints de
+  Supabase (catálogo y login). El preview además está protegido (401) y no se pudo validar el
+  flujo de forma anónima. Las migraciones/seed del Supabase remoto no pudieron confirmarse.
+- Decisión: **no mergear** hasta corregir la URL, confirmar migraciones/seed remotas y
+  revalidar el flujo. El flujo end-to-end permanece validado contra Supabase local.
+
+### 2026-06-21 - Remediación Etapa 1 (Vercel); Etapa 2 (DB) congelada
+
+- Se confirmó que el Supabase remoto y las variables son compartidos por Preview y Production,
+  por lo que `db push` afectaría producción. Por decisión del usuario, Etapa 2 queda congelada.
+- Etapa 1 aplicada sin tocar Production: `NEXT_PUBLIC_SUPABASE_URL` corregida (sin `/rest/v1/`)
+  y `NEXT_PUBLIC_SITE_URL` definida, ambas scopeadas al preview de la rama. Anon key intacta;
+  sin `service_role` expuesta.
+- Validación funcional del flujo en preview a cargo del usuario (manual). Sigue **sin merge** y
+  Sprint 4 sin iniciar.
+
+### 2026-06-21 - Cierre de sesión
+
+- Decisión tomada: usar un **proyecto Supabase dedicado al preview** (ADR-023); no se toca
+  `deizsoojahyjfowyeuda` ni Production. Etapa 2 (db push) queda a la espera de credenciales del
+  nuevo proyecto.
+- Gate de calidad re-validado al cierre: `db:reset`, `db:lint`, `db:types` (sin diff), `lint`,
+  `typecheck`, `test` 27/27 y `build` — todos OK. Working tree limpio.
+- PR #1 OPEN, MERGEABLE, **sin merge**. Sprint 4 sin iniciar.
+- Próximo objetivo: crear/configurar el Supabase Preview independiente y validar el PR sin
+  riesgo para producción (ver `NEXT_SESSION_START` en PROJECT_STATE.md).
