@@ -295,3 +295,13 @@ hasta completar todos los ítems pendientes de este gate.
   flujo de forma anónima. Las migraciones/seed del Supabase remoto no pudieron confirmarse.
 - Decisión: **no mergear** hasta corregir la URL, confirmar migraciones/seed remotas y
   revalidar el flujo. El flujo end-to-end permanece validado contra Supabase local.
+
+### 2026-06-21 - Remediación Etapa 1 (Vercel); Etapa 2 (DB) congelada
+
+- Se confirmó que el Supabase remoto y las variables son compartidos por Preview y Production,
+  por lo que `db push` afectaría producción. Por decisión del usuario, Etapa 2 queda congelada.
+- Etapa 1 aplicada sin tocar Production: `NEXT_PUBLIC_SUPABASE_URL` corregida (sin `/rest/v1/`)
+  y `NEXT_PUBLIC_SITE_URL` definida, ambas scopeadas al preview de la rama. Anon key intacta;
+  sin `service_role` expuesta.
+- Validación funcional del flujo en preview a cargo del usuario (manual). Sigue **sin merge** y
+  Sprint 4 sin iniciar.

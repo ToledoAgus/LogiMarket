@@ -468,3 +468,22 @@ robusto frente a concurrencia y reintentos.
   (2) definir `NEXT_PUBLIC_SITE_URL`; (3) `supabase link` + `supabase db push` al proyecto
   remoto y cargar datos reales (sin el usuario de prueba del seed en producción); (4) ajustar
   Deployment Protection o usar un bypass para revalidar el flujo en el preview.
+
+### 2026-06-21 - Remediación Etapa 1 (Vercel) aplicada; Etapa 2 (DB) congelada
+
+- Hallazgo de seguridad confirmado: el proyecto Supabase `deizsoojahyjfowyeuda` y las variables
+  `NEXT_PUBLIC_*` son **compartidos por Preview y Production**. Por lo tanto `supabase db push`
+  afectaría producción. Se escaló y, por decisión del usuario, **Etapa 2 (DB) queda congelada**
+  y la validación funcional del flujo la realiza el usuario manualmente.
+- **Etapa 1 (solo Vercel, sin tocar Production):**
+  - `NEXT_PUBLIC_SUPABASE_URL` corregida y **scopeada al preview de la rama**
+    `feat/sprint-3-cart-orders` → `https://deizsoojahyjfowyeuda.supabase.co` (sin `/rest/v1/`).
+  - `NEXT_PUBLIC_SITE_URL` definida para el mismo preview de rama → alias estable del preview.
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY` se mantiene (Sensitive, no legible). **No** se configuró
+    `SUPABASE_SERVICE_ROLE_KEY` en ningún entorno.
+  - Nota de transparencia: al reconfigurar, `vercel env rm ... preview` eliminó la variable de
+    URL en ambos entornos; se **restauró Production de inmediato a su valor original**
+    (`.../rest/v1/`), dejándolo sin cambios respecto al estado previo.
+- Pendiente para validación funcional completa en preview: aplicar migraciones/seed al Supabase
+  remoto (Etapa 2, congelada) y resolver el acceso (Deployment Protection 401). Hasta entonces el
+  preview corregido alcanza Supabase, pero el catálogo/login no tendrán datos.
